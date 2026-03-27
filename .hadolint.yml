@@ -1,0 +1,5 @@
+ignored:
+  - DL3002  # Last USER should not be root
+  - DL3008  # Pin versions in apt get install
+  - DL3003  # Use WORKDIR to switch to a directory
+  - SC2046  # Quote this to prevent word splitting

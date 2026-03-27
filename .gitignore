@@ -1,0 +1,10 @@
+**/__pycache__/
+**/__uvcache__/
+TODO.md
+.vscode/
+.DS_Store
+**/.venv/
+.devcontainer/offline/**
+pbk-docs/**
+*.zip
+**/keep_alive_logs/

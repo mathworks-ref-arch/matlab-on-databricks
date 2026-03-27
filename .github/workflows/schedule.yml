@@ -1,0 +1,49 @@
+# Copyright 2026 The MathWorks, Inc.
+name: Schedule
+
+on:
+  # Run workflow when there is a push to the 'main' branch & push includes changes to any files in described path
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'resources/dockerfiles/**'
+      - '.github/workflows/**'
+
+  # Run at 00:00 on every Monday (1st Day of the Week) (See: crontab.guru)
+  schedule:
+    - cron: '0 0 * * 1'
+
+  workflow_dispatch:
+
+jobs:
+  # ----------------------------------------------------------------
+  # MATLAB IMAGES (5 Releases x 2 DBRs)
+  # ----------------------------------------------------------------
+  matlab:
+    name: MATLAB ${{ matrix.matlab_release }} (DBR ${{ matrix.databricks_runtime }})
+    if: always()
+    strategy:
+      fail-fast: false
+      matrix:
+        matlab_release: [R2023b, R2024a, R2024b, R2025a, R2025b]
+        databricks_runtime: ['17.3', '16.4']
+    uses: ./.github/workflows/ci.yml
+    with:
+      image_type: 'matlab'
+      matlab_release: ${{ matrix.matlab_release }}
+      databricks_runtime: ${{ matrix.databricks_runtime }}
+    secrets:
+      MATLAB_LICENSE_FILE: ${{ secrets.MATLAB_LICENSE_FILE }}
+
+  # ----------------------------------------------------------------
+  # RUNTIME IMAGES (1 Release x 1 DBR)
+  # ----------------------------------------------------------------
+  runtime:
+    name: MATLAB Runtime R2025b (DBR 17.3)
+    if: always()
+    uses: ./.github/workflows/ci.yml
+    with:
+      image_type: 'runtime'
+      matlab_release: R2025b
+      databricks_runtime: '17.3'

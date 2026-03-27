@@ -1,0 +1,92 @@
+# Copyright 2026 The MathWorks, Inc.
+
+name: "Bug Report for Dockerfiles/Containers"
+title: "<Enter short description>"
+description: "File a bug report."
+labels: [bug, needs-triage, dockerfiles]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before reporting a bug, see [Issues](https://github.com/mathworks-ref-arch/matlab-on-databricks/issues) to check if an issue already exists for the bug you encountered. To request a feature or report a vulnerability, return to [Create an Issue](https://github.com/mathworks-ref-arch/matlab-on-databricks/issues/new/choose).
+        
+        Do not include sensitive information in the bug report. If you need to share sensitive information, please contact [databricks@mathworks.com](mailto:databricks@mathworks.com).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is the problem?
+      description: A clear and concise description of what the bug is.
+    
+  - type: textarea
+    id: expectation
+    attributes:
+      label: What behavior were you expecting?
+      description: What did you expect to happen?
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: What happened instead?
+      description: What actually happened?
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to reproduce the issue
+      description: Provide a sequence of steps to reproduce the issue.
+
+  - type: textarea
+    id: image
+    attributes:
+      label: Image or Dockerfile in question
+      description: e.g., `matlab-on-databricks:r2024a` or the Dockerfile in the `matlab` directory
+
+  - type: textarea
+    id: changes
+    attributes:
+      label: Did you modify the provided Dockerfile to build and use your own image?
+      description: Yes/No. If yes, please provide a diff or describe the changes.
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Details
+      description: |
+        Please provide details about the environment where you encountered the issue, such as:
+        * Docker Version (e.g., `Docker version 20.10.17, build 100c701`)
+        * Host Operating System (e.g., `Ubuntu 22.04`, `macOS 13.1`, `Windows 11 with WSL2`)
+        * Execution Environment (e.g., `Local Machine`, `GitHub Actions`, `AWS ECS`, `Databricks`)
+        * Databricks Runtime (e.g., `17.3-LTS`)
+      render: markdown
+
+  - type: textarea
+    id: suggested-fix
+    attributes:
+      label: Suggested fix (if any)
+
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Any additional information
+      description: Add any other context about the problem here.
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and Errors
+      description: |
+        Include full errors and relevant logs.
+      render: markdown
+
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: Browser(s) used
+      multiple: true
+      options:
+        - Chrome
+        - Firefox        
+        - Safari
+        - Microsoft Edge      
+      

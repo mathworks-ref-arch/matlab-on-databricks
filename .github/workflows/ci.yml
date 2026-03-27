@@ -1,0 +1,37 @@
+# Copyright 2026 The MathWorks, Inc.
+name: CI
+
+on:
+  workflow_call:
+    inputs:
+      image_type:
+        type: string
+        required: true
+      matlab_release:
+        type: string
+        required: true
+      databricks_runtime:
+        type: string
+        required: true
+    secrets:
+      MATLAB_LICENSE_FILE:
+        required: false
+
+jobs:
+  build-test-stage:
+    uses: ./.github/workflows/build-test-stage.yml
+    with:
+      image_type: ${{ inputs.image_type }}
+      matlab_release: ${{ inputs.matlab_release }}
+      databricks_runtime: ${{ inputs.databricks_runtime }}
+    secrets:
+      MATLAB_LICENSE_FILE: ${{ secrets.MATLAB_LICENSE_FILE }}
+
+  promote-image:
+    needs: build-test-stage
+    uses: ./.github/workflows/promote.yml
+    with:
+      image_type: ${{ inputs.image_type }}
+      matlab_release: ${{ inputs.matlab_release }}
+      databricks_runtime: ${{ inputs.databricks_runtime }}
+      source_tag: ${{ inputs.matlab_release }}-${{ inputs.databricks_runtime }}

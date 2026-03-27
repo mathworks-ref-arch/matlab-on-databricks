@@ -1,0 +1,4 @@
+ipykernel
+ipywidgets
+jedi==0.17.2
+jupyterlab

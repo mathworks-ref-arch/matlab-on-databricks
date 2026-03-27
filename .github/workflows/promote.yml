@@ -1,0 +1,68 @@
+# Copyright 2026 The MathWorks, Inc.
+name: Promote Image
+
+on:
+  workflow_call:
+    inputs:
+      source_tag:
+        description: "The specific tag (e.g., R2025b-16.4) to promote"
+        type: string
+        required: true
+      image_type:
+        description: 'Type of image to promote'
+        type: string
+        required: true
+      matlab_release:
+        description: 'MATLAB Release (e.g., R2025b)'
+        type: string
+        required: true
+      databricks_runtime:
+        description: 'Databricks Runtime Version (e.g., 17.3)'
+        type: string
+        required: true
+
+env:
+  # Specify the registry to release to.
+  # For example to push to Azure Container Registry: <your-acr-name>.azurecr.io
+  REGISTRY: ghcr.io
+  REPO_NAME: ${{ github.repository }}
+
+jobs:
+  promote-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Configure Image Names
+        id: config
+        shell: bash
+        run: |
+          echo "SOURCE_IMAGE_NAME=${{ env.REPO_NAME }}/test-${{ inputs.image_type }}" >> "$GITHUB_ENV"
+          echo "TARGET_IMAGE_NAME=${{ env.REPO_NAME }}/${{ inputs.image_type }}" >> "$GITHUB_ENV"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Promote Image (Server-Side Retag)
+        env:
+          # Source URI: ghcr.io/owner/repo/test-matlab:R2025b-16.4
+          SOURCE_URI: ${{ env.REGISTRY }}/${{ env.SOURCE_IMAGE_NAME }}:${{ inputs.source_tag }}
+          # Target URI: ghcr.io/owner/repo/matlab:R2025b-16.4
+          TARGET_URI: ${{ env.REGISTRY }}/${{ env.TARGET_IMAGE_NAME }}:${{ inputs.matlab_release }}-${{ inputs.databricks_runtime }}
+        run: |
+          echo "---------------------------------------------------"
+          echo "Promoting Image"
+          echo "Source (Test): $SOURCE_URI"
+          echo "Target (Prod): $TARGET_URI"
+          echo "---------------------------------------------------"
+
+          # docker buildx imagetools create performs a server-side copy/retag.
+          docker buildx imagetools create \
+            -t "$TARGET_URI" \
+            "$SOURCE_URI"

@@ -1,0 +1,76 @@
+# Copyright 2026 The MathWorks, Inc.
+
+name: "Bug Report for Notebooks"
+title: "<Enter short description>"
+description: "File a bug report."
+labels: [bug, needs-triage, notebook]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before reporting a bug, see [Issues](https://github.com/mathworks-ref-arch/matlab-on-databricks/issues) to check if an issue already exists for the bug you encountered. To request a feature or report a vulnerability, return to [Create an Issue](https://github.com/mathworks-ref-arch/matlab-on-databricks/issues/new/choose).
+        
+        Do not include sensitive information in the bug report. If you need to share sensitive information, please contact [databricks@mathworks.com](mailto:databricks@mathworks.com).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is the problem?
+      description: A clear and concise description of what the bug is.
+
+  - type: textarea
+    id: expectation
+    attributes:
+      label: What behavior were you expecting?
+      description: What did you expect to happen?
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: What happened instead?
+      description: What actually happened?
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to reproduce the issue
+      description: Provide a sequence of steps to reproduce the issue.
+
+  - type: textarea
+    id: suggested-fix
+    attributes:
+      label: Suggested fix (if any)
+
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Any additional information
+      description: Add any other context about the problem here.
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and Errors
+      description: |
+        Include full errors, uncaught exceptions, stack traces, and relevant logs.
+        
+        If possible, provide **Standard output** and **Standard error** output from the driver logs of your cluster.
+      render: markdown
+
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: Browser(s) used
+      multiple: true
+      options:
+        - Chrome
+        - Firefox        
+        - Safari
+        - Microsoft Edge
+
+  - type: textarea
+    id: Diagnostics-output
+    attributes:
+      label: Diagnostics output
+      description: Run Diagnostics from the Diagnostic tab in Connect_to_MATLAB notebook and paste the output below.         
+      

@@ -1,0 +1,9 @@
+MD013: false # line-length
+MD024: false # no-duplicate-heading
+MD033:
+  allowed_elements:
+    - div # allow-div-tags
+    - img # allow-img-tags
+  table_allowed_elements:
+    - br # allow-break-tags
+MD041: false # first-line-heading

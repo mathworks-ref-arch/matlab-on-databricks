@@ -1,0 +1,34 @@
+{
+    "name": "Notebook",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".",
+        "args": {
+            "PYTHON_VERSION": "3.12"
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-toolsai.jupyter",
+                "davidanson.vscode-markdownlint"
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/local-dev-env/bin/python",
+                "python.terminal.activateEnvInCurrentTerminal": true,
+                "python.terminal.activateEnvironment": true,
+                "jupyter.kernels.trusted": [
+                    "/local-dev-env/share/jupyter/kernels/python3/kernel.json"
+                ],
+                "python.venvFolders": [
+                    "/local-dev-env"
+                ],
+                "chat.disableAIFeatures": true,
+                "chat.agent.enabled": false
+            }
+        }
+    },
+    "remoteUser": "root",
+    "updateRemoteUserUID": true
+}

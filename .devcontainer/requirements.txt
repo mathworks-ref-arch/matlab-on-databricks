@@ -1,0 +1,8 @@
+ipykernel
+ipywidgets
+jupyterlab
+pytest
+pytest-cov
+pytest-mock
+requests
+ruff
