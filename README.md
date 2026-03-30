@@ -24,7 +24,7 @@ Then, MATLAB users in your organization can:
 
   - Perform Spark operations in MATLAB on a single node, for quick development and testing.
 
-    - Combine Spark operations with compiled MATLAB or Simulink&reg; code for quick development in MATLAB, across multiple nodes.
+  - Combine Spark operations with compiled MATLAB or Simulink&reg; code for quick development in MATLAB, across multiple nodes.
 
   - Scale production workflows with compiled MATLAB or Simulink code for frequent and complex computations, across multiple nodes.
 
