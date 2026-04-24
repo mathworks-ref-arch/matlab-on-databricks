@@ -1,5 +1,6 @@
 # Copyright 2026 The MathWorks, Inc.
 
+import helper
 import pytest
 
 DATABRICKS_PYTHON_BIN = "/databricks/python3/bin"
@@ -40,6 +41,13 @@ class TestMATLABProxyIntegration:
         """
         Verify that the MATLAB Proxy is listening on the expected TCP port.
         """
-        assert docker_host.socket(
-            f"tcp://0.0.0.0:{DEFAULT_MWI_APP_PORT}"
-        ).is_listening, f"No service is listening on port {DEFAULT_MWI_APP_PORT}"
+        try:
+            helper.wait_for(
+                lambda: docker_host.socket(
+                    f"tcp://0.0.0.0:{DEFAULT_MWI_APP_PORT}"
+                ).is_listening,
+                timeout=30,
+                description=f"port {DEFAULT_MWI_APP_PORT} listening",
+            )
+        except TimeoutError:
+            pytest.fail(f"No service is listening on port {DEFAULT_MWI_APP_PORT}")

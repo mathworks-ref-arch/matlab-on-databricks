@@ -23,13 +23,13 @@ def pytest_addoption(parser):
         "--image-name",
         action="store",
         default=None,
-        help="Docker image to test (e.g., 'matlab-on-databricks:R2025b-16.4'). Overrides IMAGE_NAME env var.",
+        help="Docker image to test (e.g., 'matlab-on-databricks:R2026a-16.4'). Overrides IMAGE_NAME env var.",
     )
     parser.addoption(
         "--matlab-release",
         action="store",
         default=None,
-        help="MATLAB release version to test (e.g., 'R2025b'). Overrides MATLAB_RELEASE env var.",
+        help="MATLAB release version to test (e.g., 'R2026a'). Overrides MATLAB_RELEASE env var.",
     )
     parser.addoption(
         "--db-runtime",

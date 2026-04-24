@@ -1,10 +1,8 @@
 # Copyright 2026 The MathWorks, Inc.
-name: Lint
+name: Run Precommit
 
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_call:
   workflow_dispatch:
 
 jobs:
@@ -18,7 +16,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install pre-commit
         run: pip install pre-commit

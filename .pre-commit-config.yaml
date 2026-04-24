@@ -15,13 +15,13 @@ repos:
   rev: v3.12.0-2
   hooks:
   - id: shfmt
-    exclude: ^resources/notebooks/mwhelpers/scripts/(InstallMATLAB|SetupCluster)\.sh$
+    exclude: ^resources/notebooks/mwhelpers/scripts/SetupCluster.sh$
 
 - repo: https://github.com/shellcheck-py/shellcheck-py
   rev: v0.11.0.1
   hooks:
   - id: shellcheck
-    exclude: ^resources/notebooks/mwhelpers/scripts/(InstallMATLAB|SetupCluster)\.sh$
+    exclude: ^resources/notebooks/mwhelpers/scripts/SetupCluster.sh$
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.14.13

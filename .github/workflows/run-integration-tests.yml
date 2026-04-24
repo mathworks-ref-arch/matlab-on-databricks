@@ -1,0 +1,98 @@
+# Copyright 2026 The MathWorks, Inc.
+name: Run Integration Tests
+
+on:
+  workflow_call:
+    inputs:
+      docker_image:
+        description: "Full MATLAB Docker image tag"
+        type: string
+        required: true
+      matlab_release:
+        description: "MATLAB Release (e.g., R2026a)"
+        type: string
+        required: true
+      databricks_runtime:
+        description: "Databricks Runtime Version (e.g., 17.3)"
+        type: string
+        required: true
+      matlab_update:
+        description: "MATLAB Update (e.g., U4). Empty = latest update for MATLAB, base release for Runtime."
+        type: string
+        required: false
+        default: ''
+    secrets:
+      MATLAB_LICENSE_FILE:
+        required: false
+
+  workflow_dispatch:
+    inputs:
+      docker_image:
+        description: "Full MATLAB Docker image tag"
+        type: string
+        required: true
+      matlab_release:
+        description: "MATLAB Release (e.g., R2026a)"
+        type: string
+        required: true
+      databricks_runtime:
+        description: "Databricks Runtime Version (e.g., 17.3)"
+        type: string
+        required: true
+      matlab_update:
+        description: "MATLAB Update (e.g., U4). Empty = latest update for MATLAB, base release for Runtime."
+        type: string
+        default: ''
+        required: false
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  integration_tests:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Resolve test configuration
+        id: config
+        run: |
+          {
+            echo "image=${{ inputs.docker_image || github.event.inputs.docker_image }}"
+            echo "matlab_release=${{ inputs.matlab_release || github.event.inputs.matlab_release }}"
+            echo "databricks_runtime=${{ inputs.databricks_runtime || github.event.inputs.databricks_runtime }}"
+            echo "matlab_update=${{ inputs.matlab_update || github.event.inputs.matlab_update }}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull docker image
+        run: docker pull "${{ steps.config.outputs.image }}"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r tests/docker/requirements.txt
+
+      - name: Run integration tests
+        run: python3 -m pytest tests/docker/integration
+        env:
+          IMAGE_NAME: ${{ steps.config.outputs.image }}
+          MATLAB_RELEASE: ${{ steps.config.outputs.matlab_release }}
+          MATLAB_UPDATE: ${{ steps.config.outputs.matlab_update }}
+          DB_RUNTIME: ${{ steps.config.outputs.databricks_runtime }}
+          MATLAB_LICENSE_FILE: ${{ secrets.MATLAB_LICENSE_FILE }}

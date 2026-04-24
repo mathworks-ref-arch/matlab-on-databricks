@@ -1,0 +1,66 @@
+# Copyright 2026 The MathWorks, Inc.
+name: Dev Manual
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "What to run"
+        type: choice
+        options:
+          - build
+          - build-and-test
+          - test
+        required: true
+      image_type:
+        description: "Image type"
+        type: choice
+        options:
+          - 'matlab'
+          - 'runtime'
+        required: true
+      matlab_release:
+        description: "MATLAB Release (e.g., R2026a)"
+        type: string
+        default: 'R2026a'
+        required: true
+      databricks_runtime:
+        description: "Databricks Runtime Version (e.g., 17.3)"
+        type: string
+        default: '17.3'
+        required: true
+      matlab_update:
+        description: "MATLAB Update (e.g., U4). Empty = latest update for MATLAB, base release for Runtime."
+        type: string
+        default: ''
+        required: false
+      docker_image:
+        description: "Full MATLAB Docker image tag, required for test mode"
+        type: string
+        required: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    if: ${{ github.event.repository.private && github.event.inputs.mode != 'test' }}
+    uses: ./.github/workflows/docker-pipeline.yml
+    with:
+      image_type: ${{ github.event.inputs.image_type }}
+      matlab_release: ${{ github.event.inputs.matlab_release }}
+      matlab_update: ${{ github.event.inputs.matlab_update }}
+      databricks_runtime: ${{ github.event.inputs.databricks_runtime }}
+      run_integration: ${{ github.event.inputs.mode == 'build-and-test' && github.event.inputs.image_type == 'matlab' }}
+    secrets: inherit
+
+  test_from_existing_image:
+    if: ${{ github.event.repository.private && github.event.inputs.image_type == 'matlab' && github.event.inputs.mode == 'test' }}
+    uses: ./.github/workflows/run-integration-tests.yml
+    with:
+      docker_image: ${{ github.event.inputs.docker_image }}
+      matlab_release: ${{ github.event.inputs.matlab_release }}
+      matlab_update: ${{ github.event.inputs.matlab_update }}
+      databricks_runtime: ${{ github.event.inputs.databricks_runtime }}
+    secrets: inherit

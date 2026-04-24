@@ -1,19 +1,7 @@
 # Copyright 2026 The MathWorks, Inc.
-name: Unit testing for MATLAB on Databricks
+name: Run Unit Tests
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'resources/notebooks/**'
-      - 'tests/unit/**'
-      - '.github/workflows/run-unit-tests.yml'
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'resources/notebooks/**'
-      - 'tests/unit/**'
-      - '.github/workflows/run-unit-tests.yml'
   workflow_call:
   workflow_dispatch:
 
@@ -41,8 +29,7 @@ jobs:
           SOURCE_SCRIPTS_DIR: ${{ github.workspace }}/resources/notebooks/mwhelpers/scripts
           TEST_SCRIPTS_DIR: ${{ github.workspace }}/tests/unit/shell
           BATS_LIB_PATH: ${{ github.workspace }}/.bats
-        run: |
-          bats "$TEST_SCRIPTS_DIR"
+        run: bats "$TEST_SCRIPTS_DIR"
 
   python_tests:
     timeout-minutes: 15
@@ -59,11 +46,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependecies
+      - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install -r tests/unit/python/requirements.txt
 
-      - name: Runs tests and report coverage
-        run: |
-          python3 -m pytest --cov=resources/notebooks/ tests/unit/python
+      - name: Run tests and report coverage
+        run: python3 -m pytest --cov=resources/notebooks/ tests/unit/python

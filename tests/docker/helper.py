@@ -1,7 +1,9 @@
 # Copyright 2026 The MathWorks, Inc.
 
+import ast
 import logging
 import time
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +79,11 @@ def run_matlab_code(host, code, check=True):
         f"\nResult:\n{result.stdout}\n{result.stderr}"
     )
     if check and result.exit_status != 0:
-        raise RuntimeError("MATLAB execution failed.\n")
+        raise RuntimeError(
+            f"MATLAB execution failed.\n"
+            f"Stdout: {result.stdout}\n"
+            f"stderr: {result.stderr}"
+        )
     return result
 
 
@@ -95,32 +101,47 @@ def run_matlab_test(host, test_file_path):
     return run_matlab_code(host, f"assertSuccess(runtests('{test_file_path}'))")
 
 
-def run_python_test(host, test_file_path, python_bin_path):
+def discover_test_functions(local_test_file):
     """
-    Runs a python test file inside the container.
+    Discovers all test_* functions in a Python file using AST parsing.
 
-    It changes directory to the test file's location to ensure relative imports
-    work correctly, then invokes 'unittest' on the file.
+    Args:
+        local_test_file (str or Path): Path to the Python test file on the host.
+
+    Returns:
+        list[str]: Sorted list of test function names.
+    """
+    source = Path(local_test_file).read_text()
+    tree = ast.parse(source)
+    return sorted(
+        node.name
+        for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef) and node.name.startswith("test_")
+    )
+
+
+def run_python_function(host, test_file, function_name, python_bin_path):
+    """
+    Runs a specific Python test function inside the container.
 
     Args:
         host: The testinfra host object.
-        test_file_path (str): Path to the Python test file inside the container.
+        test_file (str): Filename of the test module (e.g. 'matlab_in_container_tests').
+        function_name (str): Name of the function to call.
         python_bin_path (str): Path to the directory containing the python3 executable.
 
     Returns:
-        ExecResult: The result of the execution.
+        ExecResult: The result object containing exit code and output.
     """
-    python_cmd = (
+    cmd = (
         f"export PATH={python_bin_path}:$PATH; "
-        f'cd "$(dirname "{test_file_path}")" && '
-        f'python3 -m unittest -v "$(basename "{test_file_path}")" 2>&1'
+        f'python3 -c "from {test_file} import {function_name}; {function_name}()"'
     )
-    result = host.run(python_cmd)
+    result = host.run(cmd)
     logger.info(
-        f"Python execution details:\n"
-        f"Command:\n{python_cmd}\n"
-        f"\nResult:\n{result.stdout}\n{result.stderr}"
+        f"Python test '{function_name}' details:\n"
+        f"Stdout:\n{result.stdout}\n"
+        f"Stderr:\n{result.stderr}\n"
+        f"Exit Status: {result.exit_status}"
     )
-    if result.exit_status != 0:
-        raise RuntimeError("Python execution failed.\n")
     return result

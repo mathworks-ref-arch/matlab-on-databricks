@@ -1,38 +1,50 @@
 # Copyright 2026 The MathWorks, Inc.
-name: Build, Test and Stage Docker Image
+name: Docker Pipeline
 
 on:
   workflow_call:
     inputs:
       image_type:
-        description: 'Type of image to build'
+        description: "Type of image to build"
         type: string
         required: true
       matlab_release:
-        description: 'MATLAB Release (e.g., R2025b)'
+        description: "MATLAB Release (e.g., R2026a)"
         type: string
         required: true
       databricks_runtime:
-        description: 'Databricks Runtime Version (e.g., 17.3)'
+        description: "Databricks Runtime Version (e.g., 17.3)"
         type: string
         required: true
+      matlab_update:
+        description: "MATLAB Update (e.g., U4). Empty = latest update for MATLAB, base release for Runtime."
+        type: string
+        required: false
+        default: ''
+      run_integration:
+        description: "Run integration tests after docker tests"
+        type: boolean
+        required: false
+        default: false
+      promote:
+        description: "Push production-tagged image to GHCR after all tests pass"
+        type: boolean
+        required: false
+        default: false
     secrets:
       MATLAB_LICENSE_FILE:
         required: false
 
 env:
-  # Specify the registry to release to.
-  # For example to push to Azure Container Registry: <your-acr-name>.azurecr.io
   REGISTRY: ghcr.io
   REPO_NAME: ${{ github.repository }}
 
 jobs:
-  build-test-stage:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -56,10 +68,8 @@ jobs:
           df -h /
 
       - name: Configure build environment
-        id: config
         shell: bash
         run: |
-          # Determine Ubuntu Version based on Databricks Runtime Major Version
           DBR_MAJOR=$(echo "${{ inputs.databricks_runtime }}" | cut -d. -f1)
           if [ "$DBR_MAJOR" -ge 16 ]; then
             UBUNTU_VERSION="24.04"
@@ -67,11 +77,24 @@ jobs:
             UBUNTU_VERSION="22.04"
           fi
 
+          # Convert unified matlab_update (U<number>) to Dockerfile-specific format
+          if [ "${{ inputs.image_type }}" = "runtime" ]; then
+            if [ -n "${{ inputs.matlab_update }}" ]; then
+              # Strip 'U' prefix for runtime Dockerfile (expects numeric)
+              MATLAB_UPDATE=$(echo "${{ inputs.matlab_update }}" | sed 's/^[Uu]//')
+            else
+              MATLAB_UPDATE=0
+            fi
+          else
+            MATLAB_UPDATE="${{ inputs.matlab_update }}"
+          fi
+
           {
-            echo "IMAGE_NAME=${{ env.REPO_NAME }}/test-${{ inputs.image_type }}"
+            echo "IMAGE_TAG=${{ inputs.image_type }}:local"
             echo "BUILD_CONTEXT=resources/dockerfiles/${{ inputs.image_type }}"
             echo "DATABRICKS_RUNTIME_VERSION=${{ inputs.databricks_runtime }}"
             echo "UBUNTU_VERSION=${UBUNTU_VERSION}"
+            echo "MATLAB_UPDATE=${MATLAB_UPDATE}"
           } >> "$GITHUB_ENV"
 
       - name: Set up Docker Buildx
@@ -81,51 +104,56 @@ jobs:
         uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
-          # Update the username & password for your registry
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=${{ inputs.matlab_release }}-${{ inputs.databricks_runtime }}
-
-      - name: Build and Load image
+      - name: Build and load image
         uses: docker/build-push-action@v7
         with:
           context: "{{defaultContext}}:${{ env.BUILD_CONTEXT }}"
           build-args: |
             MATLAB_RELEASE=${{ inputs.matlab_release }}
+            MATLAB_UPDATE=${{ env.MATLAB_UPDATE }}
             DATABRICKS_RUNTIME_VERSION=${{ env.DATABRICKS_RUNTIME_VERSION }}
             UBUNTU_VERSION=${{ env.UBUNTU_VERSION }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.IMAGE_TAG }}
           load: true
-          cache-from: type=gha,scope=${{ inputs.image_type }}-${{ inputs.matlab_release }}-${{ inputs.databricks_runtime }}
-          cache-to: type=gha,mode=max,scope=${{ inputs.image_type }}-${{ inputs.matlab_release }}-${{ inputs.databricks_runtime }}
+          push: false
 
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install test dependencies
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install -r tests/docker/requirements.txt
 
-      - name: Run local docker tests
+      - name: Run docker tests
         run: python3 -m pytest tests/docker/${{ inputs.image_type }}
         env:
-          IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.matlab_release }}-${{ inputs.databricks_runtime }}
+          IMAGE_NAME: ${{ env.IMAGE_TAG }}
           MATLAB_RELEASE: ${{ inputs.matlab_release }}
+          MATLAB_UPDATE: ${{ inputs.matlab_update }}
           DB_RUNTIME: ${{ inputs.databricks_runtime }}
           MATLAB_LICENSE_FILE: ${{ secrets.MATLAB_LICENSE_FILE }}
 
-      - name: Push to Registry
-        if: success()
+      - name: Run integration tests
+        if: ${{ inputs.run_integration }}
+        run: python3 -m pytest tests/docker/integration
+        env:
+          IMAGE_NAME: ${{ env.IMAGE_TAG }}
+          MATLAB_RELEASE: ${{ inputs.matlab_release }}
+          MATLAB_UPDATE: ${{ inputs.matlab_update }}
+          DB_RUNTIME: ${{ inputs.databricks_runtime }}
+          MATLAB_LICENSE_FILE: ${{ secrets.MATLAB_LICENSE_FILE }}
+
+      - name: Promote image
+        if: ${{ success() && inputs.promote }}
+        env:
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          PROD_TAG: ${{ env.REGISTRY }}/${{ env.REPO_NAME }}/${{ inputs.image_type }}:${{ inputs.matlab_release }}-${{ inputs.databricks_runtime }}
         run: |
-          echo "${{ steps.meta.outputs.tags }}" | xargs -I {} docker push {}
+          docker tag "$IMAGE_TAG" "$PROD_TAG"
+          docker push "$PROD_TAG"

@@ -1,0 +1,83 @@
+# Copyright 2026 The MathWorks, Inc.
+name: Dev PR
+
+on:
+  pull_request:
+    branches: ['main']
+
+permissions:
+  contents: read
+  pull-requests: read
+  packages: write
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    if: ${{ github.event.repository.private }}
+    runs-on: ubuntu-latest
+    outputs:
+      mwhelpers: ${{ steps.filter.outputs.mwhelpers }}
+      docker_matlab: ${{ steps.filter.outputs.docker_matlab }}
+      docker_runtime: ${{ steps.filter.outputs.docker_runtime }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Detect changed areas
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            mwhelpers:
+              - 'resources/notebooks/mwhelpers/**'
+              - 'tests/unit/**'
+              - 'tests/docker/integration/**'
+            docker_matlab:
+              - 'resources/dockerfiles/matlab/**'
+              - 'tests/docker/matlab/**'
+            docker_runtime:
+              - 'resources/dockerfiles/runtime/**'
+              - 'tests/docker/runtime/**'
+
+  lint:
+    if: ${{ github.event.repository.private }}
+    uses: ./.github/workflows/run-precommit.yml
+
+  unit_tests:
+    needs: changes
+    if: ${{ needs.changes.result == 'success' && needs.changes.outputs.mwhelpers == 'true' }}
+    uses: ./.github/workflows/run-unit-tests.yml
+
+  build_matlab_image:
+    needs: changes
+    if: ${{ needs.changes.result == 'success' && needs.changes.outputs.docker_matlab == 'true' }}
+    uses: ./.github/workflows/docker-pipeline.yml
+    with:
+      image_type: 'matlab'
+      matlab_release: 'R2026a'
+      databricks_runtime: '17.3'
+      run_integration: true
+    secrets: inherit
+
+  build_runtime_image:
+    needs: changes
+    if: ${{ needs.changes.result == 'success' && needs.changes.outputs.docker_runtime == 'true' }}
+    uses: ./.github/workflows/docker-pipeline.yml
+    with:
+      image_type: 'runtime'
+      matlab_release: 'R2026a'
+      databricks_runtime: '17.3'
+    secrets: inherit
+
+  integration_with_latest_release:
+    needs: changes
+    if: ${{ needs.changes.result == 'success' && needs.changes.outputs.docker_matlab != 'true' && needs.changes.outputs.mwhelpers == 'true' }}
+    uses: ./.github/workflows/run-integration-tests.yml
+    with:
+      docker_image: ${{ format('ghcr.io/{0}/matlab:R2026a-17.3', github.repository) }}
+      matlab_release: 'R2026a'
+      databricks_runtime: '17.3'
+    secrets: inherit

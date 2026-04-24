@@ -73,6 +73,20 @@ class TestContainer:
             f"Expected MW_CONTEXT_TAGS={expected_value}, but got {actual_value}"
         )
 
+    @pytest.mark.parametrize(
+        "env_var",
+        [
+            "PIP_BREAK_SYSTEM_PACKAGES",
+            "PIP_INDEX_URL",
+        ],
+    )
+    def test_env_vars_not_set(self, docker_host, env_var):
+        """
+        Verifies that PIP env vars are unset or empty.
+        """
+        value = docker_host.environment().get(env_var, "")
+        assert value == "", f"Expected {env_var} to be unset or empty, but got {value}"
+
     def test_databricks_runtime(self, docker_host, databricks_runtime):
         """
         Verifies the Databricks Runtime version environment variable.
@@ -98,24 +112,6 @@ class TestContainer:
         Verifies that the working directory is set to /root.
         """
         assert docker_host.check_output("pwd") == "/root"
-
-    def test_pip_break_system_packages(self, docker_host):
-        """
-        Verifies that PIP_BREAK_SYSTEM_PACKAGES is unset or empty.
-        """
-        actual_value = docker_host.environment().get("PIP_BREAK_SYSTEM_PACKAGES", "")
-        assert actual_value == "", (
-            f"Expected PIP_BREAK_SYSTEM_PACKAGES to be unset or empty, but got {actual_value}"
-        )
-
-    def test_pip_index_url_not_set(self, docker_host):
-        """
-        Verifies that PIP_INDEX_URL is not persisted in the final image.
-        """
-        actual_value = docker_host.environment().get("PIP_INDEX_URL", "")
-        assert actual_value == "", (
-            f"Expected PIP_INDEX_URL to be unset or empty, but got {actual_value}"
-        )
 
     def test_mpm_is_installed(self, docker_host):
         """

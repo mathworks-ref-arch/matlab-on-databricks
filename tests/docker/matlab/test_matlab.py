@@ -68,6 +68,15 @@ class TestLicensedMATLAB:
         )
         assert result.exit_status == 0, "Incorrect products installed"
 
+    def test_startup_settings(self, docker_host):
+        """
+        Verify that startup settings are correctly applied.
+        """
+        result = helper.run_matlab_test(
+            docker_host, f"{CONTAINER_TEST_DIR}/StartupSettingsTest.m"
+        )
+        assert result.exit_status == 0, "Startup settings verification failed"
+
 
 @pytest.mark.parametrize(
     "docker_host",
@@ -79,9 +88,7 @@ class TestLicensedMATLAB:
     ],
     indirect=True,
 )
-@pytest.mark.skip(reason="Update assert to handle different versions of MATLAB")
 class TestUnlicensedMATLAB:
     def test_matlab_fails_without_license(self, docker_host):
         result = helper.run_matlab_code(docker_host, "rand", check=False)
         assert result.exit_status != 0, "MATLAB should fail without a valid license"
-        assert "License checkout failed." in result.stderr
