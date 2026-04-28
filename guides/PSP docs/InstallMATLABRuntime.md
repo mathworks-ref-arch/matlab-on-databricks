@@ -22,12 +22,12 @@ This guide shows how to install MATLAB&reg; Runtime on a Databricks cluster. You
 
 ## Build and Push Docker Image
 
-Use the MATLAB Runtime [Dockerfile](/resources/dockerfiles/runtime/Dockerfile) in this repository to build a Docker image for MATLAB Runtime R2025b. To request help with creating a custom image, contact [databricks@mathworks.com](mailto:databricks@mathworks.com).
+Use the MATLAB Runtime [Dockerfile](/resources/dockerfiles/runtime/Dockerfile) in this repository to build a Docker image for MATLAB Runtime R2026a. To request help with creating a custom image, contact [databricks@mathworks.com](mailto:databricks@mathworks.com).
 
 For example:
 
 ```bash
-docker build -t myregistry.azurecr.io/mathworks/matlabruntimer2025b_17-3 -f ./output/Dockerfile.R2025b-17.3 .
+docker build -t myregistry.azurecr.io/mathworks/matlabruntimer2026a_17-3 -f ./output/Dockerfile.R2026a-17.3 .
 ```
 
 Then push the built image to your organization's container registry.
@@ -44,7 +44,7 @@ When you use MATLAB Runtime, the release must match that of the MATLAB Desktop y
 
 ### Build Policy
 
-This is an example policy for MATLAB Runtime R2025b and Databricks runtime 17. See the list that follows for details on which fields you must update so you can use the policy.
+This is an example policy for MATLAB Runtime R2026a and Databricks runtime 17. See the list that follows for details on which fields you must update so you can use the policy.
 
 ```json
 {
@@ -58,7 +58,7 @@ This is an example policy for MATLAB Runtime R2025b and Databricks runtime 17. S
   },
   "docker_image.url": {
     "type": "fixed",
-    "value": "123456789.dkr.ecr.us-west-2.amazonaws.com/matlab/databricks/runtime:r2025b-dbx17.3"
+    "value": "123456789.dkr.ecr.us-west-2.amazonaws.com/matlab/databricks/runtime:r2026a-dbx17.3"
   },
   "spark_env_vars.MW_INTERFACE_DIRECTORY_DEFAULT": {
     "type": "unlimited",
@@ -70,7 +70,7 @@ This is an example policy for MATLAB Runtime R2025b and Databricks runtime 17. S
   },
   "spark_env_vars.MW_RUNTIME_RELEASE": {
     "type": "unlimited",
-    "value": "R2025b"
+    "value": "R2026a"
   },
   "spark_conf.spark.databricks.isv.product": {
     "type": "unlimited",
@@ -105,7 +105,7 @@ This is an example policy for MATLAB Runtime R2025b and Databricks runtime 17. S
   - `<Release_Year>` is the 2-digit year of the MATLAB release.
   - `<Release_Number>` is the number of the MATLAB release.
   - The third number is always `0`.
-  - For example, for MATLAB R2025b, the value is `MathWorks_MATLAB_Runtime/25.2.0`.
+  - For example, for MATLAB R2026a, the value is `MathWorks_MATLAB_Runtime/26.1.0`.
 
 - In the `spark_version` field, specify your Spark version. To find this value, navigate in Databricks to **Compute > Create compute**. Click the **Databricks runtime** dropdown to see the Spark version for your Databricks runtime.
 
@@ -127,8 +127,8 @@ This is an example policy for MATLAB Runtime R2025b and Databricks runtime 17. S
 3. Click **Create policy**.
 4. Enter the suggested **Name** and **Description** for the policy in this example:
 
-   - **Name**: `MATLAB Runtime R2025b, DBR 17.3`
-   - **Description**: `MATLAB Runtime R2025b on a dedicated 17.3 Cluster.`
+   - **Name**: `MATLAB Runtime R2026a, DBR 17.3`
+   - **Description**: `MATLAB Runtime R2026a on a dedicated 17.3 Cluster.`
 
 5. Click the **JSON** tab, and paste the Policy JSON you created earlier into the **Definition JSON** section.
 6. Click **Create**.

@@ -101,7 +101,7 @@ These fields are required for every MATLAB Desktop cluster policy. They configur
   - `<Release_Year>` is the 2-digit year of the MATLAB release.
   - `<Release_Number>` is the number of the MATLAB release.
   - The third number is always `0`.
-  - For example, for MATLAB R2025b, the value is `MathWorks_MATLAB/25.2.0`.
+  - For example, for MATLAB R2026a, the value is `MathWorks_MATLAB/26.1.0`.
 
 ### Docker Image Fields
 
@@ -199,8 +199,8 @@ Note that:
 3. Click **Create policy**.
 4. Enter the suggested **Name** and **Description** for the policy in this example:
 
-   - **Name**: `MATLAB Desktop R2025b, DBR 17.3`
-   - **Description**: `MATLAB Desktop R2025b on a dedicated 17.3 Cluster supporting the optional installation of the MATLAB Interface for Databricks.`
+   - **Name**: `MATLAB Desktop R2026a, DBR 17.3`
+   - **Description**: `MATLAB Desktop R2026a on a dedicated 17.3 Cluster supporting the optional installation of the MATLAB Interface for Databricks.`
 
 5. Click the **JSON** tab, and paste your complete Policy JSON into the **Definition JSON** section.
 6. Click **Create**.
@@ -221,7 +221,7 @@ The following JSON combines all of the sections above using AWS ECR as the Docke
   },
   "docker_image.url": {
     "type": "fixed",
-    "value": "123456789.dkr.ecr.us-west-2.amazonaws.com/mathworks/matlab-on-databricks:R2025b"
+    "value": "123456789.dkr.ecr.us-west-2.amazonaws.com/mathworks/matlab-on-databricks:R2026a"
   },
   "spark_env_vars.MW_INTERFACE_DIRECTORY_DEFAULT": {
     "type": "unlimited",

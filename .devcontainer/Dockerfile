@@ -4,7 +4,7 @@
 
 # Using the default python version in Databricks Runtime 17.3-LTS
 ARG PYTHON_VERSION=3.12
-ARG MATLAB_RELEASE="R2025b"
+ARG MATLAB_RELEASE="R2026a"
 ARG UBUNTU_VERSION="24.04"
 # Default installation directory for MATLAB
 ARG MATLAB_INSTALL_LOCATION="/opt/matlab"

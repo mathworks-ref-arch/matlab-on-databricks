@@ -52,7 +52,7 @@ if [[ -z "$RELEASE" ]]; then
     if is_verbose_enabled; then
         echo "Defaulting to Latest available MATLAB Release."
     fi
-    RELEASE="R2025b"
+    RELEASE="R2026a"
 fi
 
 echo "Installing MATLAB with the following parameters:"

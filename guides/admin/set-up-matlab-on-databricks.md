@@ -42,7 +42,7 @@ First, use the MATLAB [Dockerfile](/resources/dockerfiles/matlab/Dockerfile) in 
     - You can specify the address to your network license manager by setting the environment variable `LICENSE_SERVER` in the Dockerfile.
 
     ```bash
-    docker build -t matlab-on-databricks:R2025b -f resources/dockerfiles/matlab/Dockerfile .
+    docker build -t matlab-on-databricks:R2026a -f resources/dockerfiles/matlab/Dockerfile .
     ```
 
 ## Push Image to Container Registry
@@ -53,16 +53,16 @@ Push the built image to your organization's container registry.
 
 ```bash
 az acr login --name <myRegistry>
-docker tag matlab-on-databricks:R2025b <myRegistry>.azurecr.io/matlab-on-databricks:R2025b
-docker push <myRegistry>.azurecr.io/matlab-on-databricks:R2025b
+docker tag matlab-on-databricks:R2026a <myRegistry>.azurecr.io/matlab-on-databricks:R2026a
+docker push <myRegistry>.azurecr.io/matlab-on-databricks:R2026a
 ```
 
 ### Example: AWS Elastic Container Registry
 
 ```bash
 aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <aws_account_id>.dkr.ecr.<region>.amazonaws.com
-docker tag matlab-on-databricks:R2025b <aws_account_id>.dkr.ecr.<region>.amazonaws.com/matlab-on-databricks:R2025b
-docker push <aws_account_id>.dkr.ecr.<region>.amazonaws.com/matlab-on-databricks:R2025b
+docker tag matlab-on-databricks:R2026a <aws_account_id>.dkr.ecr.<region>.amazonaws.com/matlab-on-databricks:R2026a
+docker push <aws_account_id>.dkr.ecr.<region>.amazonaws.com/matlab-on-databricks:R2026a
 ```
 
 ## Create Policy

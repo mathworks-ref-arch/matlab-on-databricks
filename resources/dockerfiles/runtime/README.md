@@ -8,7 +8,7 @@ MATLAB&reg; Compiler SDK&trade; or Simulink&reg; Compiler&trade;.
 By default, the [Dockerfile](./Dockerfile) in this folder:
 
 1. Builds a base image of [databricksruntime/standard:17.3-LTS](https://hub.docker.com/r/databricksruntime/standard/tags).
-2. Installs MATLAB Runtime for R2025b.
+2. Installs MATLAB Runtime for R2026a.
 3. Installs required 3rd party dependencies for MATLAB Runtime.
 
 ## Requirements
@@ -32,7 +32,7 @@ cd matlab-on-databricks/resources/dockerfiles/runtime
 Build container with a name and tag of your choice.
 
 ```bash
-docker build -t matlab/databricks/runtime:r2025b-dbx17.3 --build-arg MATLAB_UPDATE=4 .
+docker build -t matlab/databricks/runtime:r2026a-dbx17.3 --build-arg MATLAB_UPDATE=4 .
 ```
 
 To customize your Docker image, you can specify  arguments with the `docker build` command or by directly modifying the [Dockerfile](../runtime/Dockerfile).
@@ -40,7 +40,7 @@ To customize your Docker image, you can specify  arguments with the `docker buil
 | Argument Name | Default value | Description |
 | --- | --- | --- |
 | DATABRICKS_RUNTIME_VERSION | 17.3 | A valid LTS [Databricks Runtime Version](https://docs.databricks.com/aws/en/release-notes/runtime/). Also see [Databricks Runtime tags on Dockerhub](https://hub.docker.com/r/databricksruntime/standard/tags). |
-| MATLAB_RELEASE | R2025b | MATLAB release to install, for example, `R2024b`. |
+| MATLAB_RELEASE | R2026a | MATLAB release to install, for example, `R2024b`. |
 | MATLAB_UPDATE | *unset* | The update to install for a given MATLAB release (for example, `U1` for update 1 of the specified `MATLAB_RELEASE`). To install the latest available update, leave this argument unset. For details, see [MATLAB Release Name (MathWorks)](https://www.mathworks.com/help/install/ug/mpminstall.html#mw_37e5e202-ecc6-4e61-9fa4-22b81f9931d3). |
 
 Example:

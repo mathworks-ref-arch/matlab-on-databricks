@@ -5,23 +5,23 @@
 
 ## Dockerfile to build MATLAB Container where:
 # 1. Base image is Databricks Runtime
-# 2. MATLAB R2025b using MATLAB Package Manager & install dependencies from mathworks-ref-arch/container-images repository
+# 2. MATLAB R2026a using MATLAB Package Manager & install dependencies from mathworks-ref-arch/container-images repository
 
 ### Dockerfile Build Commands:
 
 # By Default the container will be built for Databricks Runtime 17.3-LTS and Ubuntu 24.04.
-# docker build -t matlab-on-databricks:R2025b-17.3  .
+# docker build -t matlab-on-databricks:R2026a-17.3  .
 
 # To build the container for a different Databricks Runtime version or Ubuntu version, you can use the following commands:
 # docker build --build-arg DATABRICKS_RUNTIME_VERSION=15.4 \
 #              --build-arg UBUNTU_VERSION=22.04 \
-#              -t matlab-on-databricks:R2025b-15.4  .
+#              -t matlab-on-databricks:R2026a-15.4  .
 
 # The other build arguments can be used to specify the MATLAB release, product list, install location, and license server.
-# For example, to build the container with MATLAB R2025b, a specific product list, and a license server, you can use the following command:
-# docker build --build-arg MATLAB_RELEASE=R2025b
+# For example, to build the container with MATLAB R2026a, a specific product list, and a license server, you can use the following command:
+# docker build --build-arg MATLAB_RELEASE=R2026a
 #              --build-arg MATLAB_PRODUCT_LIST="MATLAB Deep_Learning_Toolbox Symbolic_Math_Toolbox"
-#              --build-arg MATLAB_INSTALL_LOCATION="/opt/matlab/R2025b"
+#              --build-arg MATLAB_INSTALL_LOCATION="/opt/matlab/R2026a"
 #              --build-arg LICENSE_SERVER=12345@hostname.com
 #              -t my_matlab_image_name .
 
@@ -33,7 +33,7 @@ ARG UBUNTU_VERSION=24.04
 # Use the python that is recommended by Databricks: https://docs.databricks.com/aws/en/compute/custom-containers#option-1-use-a-base-built-by-databricks
 ARG PYTHON3=/databricks/python3/bin/python3
 # Specify the MATLAB release to install.
-ARG MATLAB_RELEASE=R2025b
+ARG MATLAB_RELEASE=R2026a
 # Specify a MATLAB release update version (for example, U0 for the base release, or U1 for update 1).
 # For details, see: https://www.mathworks.com/help/install/ug/mpminstall.html#mw_37e5e202-ecc6-4e61-9fa4-22b81f9931d3
 # To install the latest available update, leave this argument empty.
@@ -81,6 +81,7 @@ ARG ADDITIONAL_PACKAGES="wget curl unzip ca-certificates xvfb git fluxbox"
 
 # Configure Python (>3.12) to allow installing system wide packages.
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
+ENV PIP_INDEX_URL=${PIP_INDEX_URL}
 
 ## Install dependencies
 RUN export DEBIAN_FRONTEND=noninteractive && apt-get update \

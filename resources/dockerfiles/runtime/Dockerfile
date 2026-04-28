@@ -15,7 +15,7 @@ ARG DATABRICKS_RUNTIME_VERSION=17.3
 # Specify the version of Ubuntu used in the base image.
 ARG UBUNTU_VERSION=24.04
 # Specify the MATLAB release to install.
-ARG MATLAB_RELEASE=R2025b
+ARG MATLAB_RELEASE=R2026a
 # Specify the MATLAB update to install.
 ARG MATLAB_UPDATE=0
 
