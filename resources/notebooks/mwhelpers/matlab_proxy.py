@@ -1,6 +1,7 @@
 # Copyright 2026 The MathWorks, Inc.
 
 import os
+import threading
 from typing import Optional
 from urllib.parse import urlparse, urlunparse
 
@@ -89,7 +90,7 @@ def _prepare_mwi_matlab_startup_script(
 
     Prepends ``cd(userpath)`` so that MATLAB starts in the user's path
     (created by ``CreateUser.sh``).  When the Databricks Support Package
-    (DSP) is available, DSP initialisation commands are appended next.
+    (DSP) is available, DSP initialization commands are appended next.
     Finally, any caller-supplied startup script is appended.
 
     Args:
@@ -167,6 +168,17 @@ def start(
 
     # Run the command as the specified user
     subprocess_shim.spawn(command=["matlab-proxy-app"], uid=uid, env=session_env)
+
+    # Starting a MATLAB session with idle timeout configured immediately triggers a keep-alive
+    # command, which resets the cluster's idle timer. This eliminates a race condition where
+    # the cluster could auto-terminate before the periodic keep-alive loop starts monitoring,
+    # ensuring a more stable user experience.
+    if "MWI_SHUTDOWN_ON_IDLE_TIMEOUT" in env:
+        threading.Thread(
+            target=dbx.run_keep_alive_command,
+            kwargs={"cluster_id": dbx.get_cluster_id()},
+        ).start()
+
     return str(port)
 
 

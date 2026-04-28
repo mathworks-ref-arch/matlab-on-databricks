@@ -222,6 +222,27 @@ def _get_keep_alive_logger() -> logging.Logger:
     return logger
 
 
+def run_keep_alive_command(cluster_id: str):
+    """Run a keep-alive command on the cluster to prevent auto-termination.
+
+    Executes a simple print command on the specified Databricks cluster to reset its
+    idle timeout timer. Logs the command status or any errors encountered.
+
+    Args:
+        cluster_id: The ID of the Databricks cluster to keep alive.
+    """
+    if not cluster_id:
+        raise ValueError("Cluster ID is required to run keep-alive command.")
+
+    logger = _get_keep_alive_logger()
+    try:
+        with DatabricksExecutionContext(cluster_id=cluster_id) as context:
+            command_status = context.run_command()
+            logger.info(f"Cluster kept alive: command status: {command_status}")
+    except Exception as e:
+        logger.error(f"Error running execution command: {e}")
+
+
 def start_cluster_keep_alive(username: str, check_interval_minutes=5):
     """Keep cluster alive while any MATLAB session is active.
 
@@ -254,16 +275,7 @@ def start_cluster_keep_alive(username: str, check_interval_minutes=5):
                     logger.info(
                         f"Found {len(servers_with_timeout)} session(s): {servers_with_timeout}"
                     )
-                    try:
-                        with DatabricksExecutionContext(
-                            cluster_id=cluster_id
-                        ) as context:
-                            command_status = context.run_command()
-                            logger.info(
-                                f"Cluster kept alive: command status: {command_status}"
-                            )
-                    except Exception as e:
-                        logger.error(f"Error running execution command: {e}")
+                    run_keep_alive_command(cluster_id)
                 time.sleep(check_interval_minutes * 60)
 
             except Exception as e:

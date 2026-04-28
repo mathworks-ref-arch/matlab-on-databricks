@@ -186,3 +186,61 @@ class TestStartClusterKeepAlive:
             username="testuser", check_interval_minutes=1
         )
         assert thread1 is thread2
+
+
+class TestRunKeepAliveCommand:
+    def test_raises_value_error_if_cluster_id_is_none(self):
+        with pytest.raises(ValueError):
+            dbx.run_keep_alive_command(cluster_id=None)
+
+    def test_successful_execution_logs_info(self, mocker):
+        """Test that successful execution logs info message."""
+        mock_logger = mocker.Mock()
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dbx._get_keep_alive_logger",
+            return_value=mock_logger,
+        )
+
+        mock_execution_context = mocker.MagicMock()
+        mock_execution_context.run_command.return_value = "SUCCESS"
+        mock_execution_context_class = mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.DatabricksExecutionContext"
+        )
+        mock_execution_context_class.return_value.__enter__.return_value = (
+            mock_execution_context
+        )
+
+        cluster_id = "test-cluster-123"
+
+        dbx.run_keep_alive_command(cluster_id=cluster_id)
+
+        mock_execution_context_class.assert_called_once_with(cluster_id=cluster_id)
+        mock_execution_context.run_command.assert_called_once()
+        mock_logger.info.assert_called_once_with(
+            "Cluster kept alive: command status: SUCCESS"
+        )
+        mock_logger.error.assert_not_called()
+
+    def test_run_command_exception_logs_error(self, mocker):
+        """Test that exceptions from run_command are logged as errors."""
+        mock_logger = mocker.Mock()
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dbx._get_keep_alive_logger",
+            return_value=mock_logger,
+        )
+
+        mock_context = mocker.MagicMock()
+        test_exception = RuntimeError("Command execution failed")
+        mock_context.run_command.side_effect = test_exception
+        mock_context_class = mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.DatabricksExecutionContext"
+        )
+        mock_context_class.return_value.__enter__.return_value = mock_context
+
+        cluster_id = "test-cluster-789"
+
+        dbx.run_keep_alive_command(cluster_id=cluster_id)
+
+        mock_logger.error.assert_called_once_with(
+            f"Error running execution command: {test_exception}"
+        )
