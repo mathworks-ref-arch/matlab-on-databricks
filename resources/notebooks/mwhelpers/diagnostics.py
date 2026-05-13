@@ -131,10 +131,12 @@ def _get_mpm_info(username: str) -> str:
 
 def _get_databricks_info(dbx_context) -> str:
     """
-    Get the Databricks related diagnostics information.
+    Get the Databricks related diagnostics information including runtime version and data security mode.
     Returns:
         str: The Databricks diagnostics information.
     """
+    databricks_info = []
+    # Get the runtime version
     runtime_version = dbx.runtime_version()
     runtime_version_full = dbx_context.runtimeVersion
     min_major_version = 13
@@ -142,9 +144,24 @@ def _get_databricks_info(dbx_context) -> str:
     # Returns true if the runtime version is greater than or equal to the minimum required version
     is_valid = runtime_version[:2] >= [min_major_version, min_minor_version]
     if is_valid:
-        return f"Databricks Runtime Version: {runtime_version_full}"
+        databricks_info.append(f"Databricks Runtime Version: {runtime_version_full}")
     else:
-        return f"Unsupported Databricks Runtime Version: {runtime_version_full}. \n Minimum required version is {min_major_version}.{min_minor_version}"
+        databricks_info.append(
+            f"Unsupported Databricks Runtime Version: {runtime_version_full}. \nMinimum required version is {min_major_version}.{min_minor_version}"
+        )
+    # Get the data security mode
+    try:
+        data_security_mode = dbx.get_cluster_data_security_mode()
+        if data_security_mode == "SINGLE_USER":
+            # Only SINGLE_USER security mode is supported in our workflow, other modes STANDARD/USER_ISOLATION/SHARED are not supported.
+            databricks_info.append(f"Data Security Mode: {data_security_mode}")
+        else:
+            databricks_info.append(
+                f"Unsupported Data Security Mode: {data_security_mode}"
+            )
+    except Exception as e:
+        databricks_info.append(f"Unable to determine Data Security Mode: {e}")
+    return "\n".join(databricks_info)
 
 
 def _get_matlab_proxy_info(username: str) -> str:

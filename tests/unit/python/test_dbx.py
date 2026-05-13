@@ -46,6 +46,80 @@ class TestGetClusterName:
         )
 
 
+class TestGetDataSecurityMode:
+    def test_returns_mode_value_when_sdk_returns_enum(
+        self, mock_databricks_context, mocker
+    ):
+        mock_cluster_info = mocker.MagicMock()
+        mock_cluster_info.data_security_mode.value = "SINGLE_USER"
+        mock_client_instance = mocker.MagicMock()
+        mock_client_instance.clusters.get.return_value = mock_cluster_info
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.WorkspaceClient",
+            return_value=mock_client_instance,
+        )
+
+        assert dbx.get_cluster_data_security_mode() == "SINGLE_USER"
+        mock_client_instance.clusters.get.assert_called_once_with(
+            mock_databricks_context.clusterId
+        )
+
+    def test_raises_when_data_security_mode_is_none(
+        self, mock_databricks_context, mocker
+    ):
+        mock_cluster_info = mocker.MagicMock()
+        mock_cluster_info.data_security_mode = None
+        mock_client_instance = mocker.MagicMock()
+        mock_client_instance.clusters.get.return_value = mock_cluster_info
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.WorkspaceClient",
+            return_value=mock_client_instance,
+        )
+
+        with pytest.raises(AttributeError):
+            dbx.get_cluster_data_security_mode()
+
+    def test_raises_when_workspace_client_raises(self, mock_databricks_context, mocker):
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.WorkspaceClient",
+            side_effect=Exception("auth failed"),
+        )
+
+        with pytest.raises(Exception, match="auth failed"):
+            dbx.get_cluster_data_security_mode()
+
+    def test_raises_when_clusters_get_raises(self, mock_databricks_context, mocker):
+        mock_client_instance = mocker.MagicMock()
+        mock_client_instance.clusters.get.side_effect = Exception("cluster not found")
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.WorkspaceClient",
+            return_value=mock_client_instance,
+        )
+
+        with pytest.raises(Exception, match="cluster not found"):
+            dbx.get_cluster_data_security_mode()
+
+    def test_raises_when_context_is_degraded(self, mocker):
+        """Simulate running from a thread where ``get_context()`` yields a
+        context whose attributes are ``None`` (e.g. ipywidgets callback
+        thread). The SDK call then raises."""
+        degraded_context = mocker.MagicMock()
+        degraded_context.browserHostName = None
+        degraded_context.apiToken = None
+        degraded_context.clusterId = None
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.get_context",
+            return_value=degraded_context,
+        )
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.WorkspaceClient",
+            side_effect=Exception("invalid host"),
+        )
+
+        with pytest.raises(Exception, match="invalid host"):
+            dbx.get_cluster_data_security_mode()
+
+
 class TestCurrentUserName:
     @pytest.mark.parametrize(
         "user_input, expected_output",

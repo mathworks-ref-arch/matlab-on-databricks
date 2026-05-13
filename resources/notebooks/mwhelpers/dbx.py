@@ -76,6 +76,16 @@ def get_cluster_name():
         return cluster_name
 
 
+def get_cluster_data_security_mode() -> str:
+    context = get_context()
+    data_security_mode = (
+        WorkspaceClient(host=context.browserHostName, token=context.apiToken)
+        .clusters.get(context.clusterId)
+        .data_security_mode
+    )
+    return data_security_mode.value
+
+
 def cluster_autotermination_minutes() -> int:
     """Get the cluster auto-termination minutes.
 

@@ -42,6 +42,44 @@ class TestGetDatabricksInfo:
         result = diagnostics._get_databricks_info(dbx_context=mock_databricks_context)
         assert "Unsupported Databricks Runtime Version" in result
 
+    def test_shows_data_security_mode_when_single_user(
+        self, mock_databricks_context, mocker
+    ):
+        mock_databricks_context.runtimeVersion = "16.4.x-scala2.13"
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.get_cluster_data_security_mode",
+            return_value="SINGLE_USER",
+        )
+        result = diagnostics._get_databricks_info(dbx_context=mock_databricks_context)
+        assert "Data Security Mode: SINGLE_USER" in result
+        assert "Unsupported Data Security Mode" not in result
+
+    def test_shows_unsupported_data_security_mode_for_other_values(
+        self, mock_databricks_context, mocker
+    ):
+        mock_databricks_context.runtimeVersion = "16.4.x-scala2.13"
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.get_cluster_data_security_mode",
+            return_value="USER_ISOLATION",
+        )
+        result = diagnostics._get_databricks_info(dbx_context=mock_databricks_context)
+        assert "Unsupported Data Security Mode: USER_ISOLATION" in result
+
+    def test_shows_unable_to_determine_when_exception_raised(
+        self, mock_databricks_context, mocker
+    ):
+        """When ``dbx.get_cluster_data_security_mode()`` raises (e.g. the SDK
+        call fails from a widget callback thread), the diagnostics should
+        catch the error and display it inline rather than crashing."""
+        mock_databricks_context.runtimeVersion = "16.4.x-scala2.13"
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.get_cluster_data_security_mode",
+            side_effect=Exception("auth failed"),
+        )
+        result = diagnostics._get_databricks_info(dbx_context=mock_databricks_context)
+        assert "Unable to determine Data Security Mode: auth failed" in result
+        assert "Databricks Runtime Version: 16.4.x-scala2.13" in result
+
 
 class TestGetMatlabProxyInfo:
     def test_returns_version_when_installed(self, mocker):
