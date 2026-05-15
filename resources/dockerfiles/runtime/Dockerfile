@@ -78,7 +78,8 @@ WORKDIR /root
 # This environment variable exists in non-docker based workflows.
 ENV DATABRICKS_RUNTIME_VERSION=${DATABRICKS_RUNTIME_VERSION}
 
-ENV MCR_VERSION=${MATLAB_RELEASE}
+# Enables checking the MATLAB Runtime version based on the cluster metadata rather than when the cluster is running.
+ENV MW_RUNTIME_RELEASE=${MATLAB_RELEASE}
 
 ENV MCRROOT=${MCR_INSTALL_LOCATION}
 

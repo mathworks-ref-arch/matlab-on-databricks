@@ -49,13 +49,13 @@ class TestContainer:
             f"Expected {variable}={expected_value}, but got {actual_value}"
         )
 
-    def test_mcr_version(self, docker_host, matlab_release):
+    def test_mw_runtime_release(self, docker_host, matlab_release):
         """
-        Verifies the MCR version environment variable.
+        Verifies the MW_RUNTIME_RELEASE environment variable.
         """
-        actual_value = docker_host.environment().get("MCR_VERSION", "")
+        actual_value = docker_host.environment().get("MW_RUNTIME_RELEASE", "")
         assert actual_value == matlab_release, (
-            f"Expected MCR_VERSION={matlab_release}, but got {actual_value}"
+            f"Expected MW_RUNTIME_RELEASE={matlab_release}, but got {actual_value}"
         )
 
     def test_databricks_runtime(self, docker_host, databricks_runtime):
