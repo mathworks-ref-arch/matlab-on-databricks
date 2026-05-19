@@ -92,7 +92,12 @@ This is an example policy for MATLAB Runtime R2026a and Databricks runtime 17. S
   },
   "autotermination_minutes": {
     "type": "unlimited",
-    "defaultValue": 30
+    "defaultValue": 120
+  },
+  "use_ml_runtime": {
+    "type": "fixed",
+    "value": false,
+    "hidden": true
   }
 }
 ```
@@ -108,6 +113,8 @@ This is an example policy for MATLAB Runtime R2026a and Databricks runtime 17. S
   - For example, for MATLAB R2026a, the value is `MathWorks_MATLAB_Runtime/26.1.0`.
 
 - In the `spark_version` field, specify your Spark version. To find this value, navigate in Databricks to **Compute > Create compute**. Click the **Databricks runtime** dropdown to see the Spark version for your Databricks runtime.
+
+- The `use_ml_runtime` field is set to `false` and marked as `hidden` to prevent users from accidentally selecting the ML runtime, which is not supported at this time. This control is only supported when using the "New Compute Simple Form" and will generate a warning otherwise. If some users use the older, more complex, form then it is recommended to remove the `use_ml_runtime` field from the policy or provide additional guidance to policy users to safely ignore the warning.
 
 - The three Docker image keys are the same regardless of which container registry you use. Only their values differ. Specify the values using the reference table that follows.
 

@@ -192,6 +192,18 @@ Note that:
 
 - To avoid unnecessary charges, terminate or delete a cluster when no longer needed.
 
+#### Use Machine Learning Runtime
+
+The `use_ml_runtime` field is set to `false` and marked as `hidden` to prevent users from accidentally selecting the ML runtime, which is not supported at this time. This control is only supported when using the "New Compute Simple Form" and will generate a warning otherwise. If some users use the older, more complex, form then it is recommended to remove the `use_ml_runtime` field from the policy or provide additional guidance to policy users to safely ignore the warning.
+
+```json
+"use_ml_runtime": {
+    "type": "fixed",
+    "value": false,
+    "hidden": true
+  }
+```
+
 ## Create Policy
 
 1. In the left-hand sidebar of your Databricks workspace, click **Compute**.
@@ -276,6 +288,11 @@ The following JSON combines all of the sections above using AWS ECR as the Docke
     "values": [
       "17.3.x-scala2.13"
     ]
+  },
+  "use_ml_runtime": {
+    "type": "fixed",
+    "value": false,
+    "hidden": true
   }
 }
 ```
