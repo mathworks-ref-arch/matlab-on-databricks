@@ -105,7 +105,7 @@ These fields are required for every MATLAB Desktop cluster policy. They configur
 
 ### Docker Image Fields
 
-The three Docker image keys are the same regardless of which container  registry you use. Only their values differ. Add the following block to your policy and fill in the values using the reference table that follows.
+With the exception of Amazon ECR, the three Docker image keys are identical across all container registries; only their values differ. Add the following block to your policy and fill in the values using the reference table below.
 
   ```json
   {
@@ -124,14 +124,27 @@ The three Docker image keys are the same regardless of which container  registry
   }
   ```
 
+When using an AWS instance profile ARN with Amazon ECR.
+
+  ```json
+  {
+   "aws_attributes.instance_profile_arn": {
+      "type": "fixed",
+      "value": "arn:aws:iam::<aws-account-number>:instance-profile/<iam-role-name>"
+    }
+  }
+```
+
   **Values by Registry:**
 
   | Registry | `docker_image.url` | `docker_image.basic_auth.username` | `docker_image.basic_auth.password` |
   | --- | --- | --- | --- |
-  | AWS ECR | `<aws_account_id>.dkr.ecr.<region>.amazonaws.com/<repository>:<tag>` | AWS | ECR authorization token from `aws ecr get-login-password`. Expires after 12 hours. Consider automating rotation. |
+  | AWS ECR | `<aws_account_id>.dkr.ecr.<region>.amazonaws.com/<repository>:<tag>` | N/A | For Amazon ECR images, do not include authentication information. Instead, use an instance profile with permissions to pull from the repository. |
   | Azure ACR | `<registry>.azurecr.io/<repository>:<tag>` | ACR admin username or service principal client ID | ACR admin password or service principal secret. The principal should have the `acrpull` role. |
   | GitHub Container Registry (ghcr.io) | `ghcr.io/<owner>/<repository>:<tag>` | GitHub username | GitHub Personal Access Token (PAT) with `read:packages` scope. |
   | Docker Hub | `<username>/<repository>:<tag>` | Docker Hub username | Docker Hub password or access token. |
+
+See also: [Databricks Docker image authentication documentation](https://docs.databricks.com/aws/en/compute/custom-containers#docker-image-authentication).
 
 ---
 
