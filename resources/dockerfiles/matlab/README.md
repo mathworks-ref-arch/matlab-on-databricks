@@ -57,6 +57,7 @@ The [Dockerfile](../../../resources/dockerfiles/matlab/Dockerfile) supports thes
 | [MATLAB_INSTALL_LOCATION](#build-an-image-with-matlab-installed-to-a-specific-location) | /opt/matlab/R2026a | Path to install MATLAB. |
 | [LICENSE_SERVER](#build-an-image-configured-to-use-a-license-server) | *unset* | Port and hostname of the machine that is running the network license manager, using the `port@hostname` syntax. For example: `27000@MyServerName`. |
 | [PIP_INDEX_URL](#build-an-image-using-a-custom-pypi-index) | *unset* | Custom PyPI index URL for pip installs (e.g., an internal Artifactory). This value is only used during the build and is not stored in the final image. |
+| [ADDITIONAL_PIP_PACKAGES](#build-an-image-with-additional-python-packages) | *unset* | Space-separated list of additional Python packages to install via pip. Supports version specifiers (e.g., `"numpy==2.1.3 pandas>=2.0"`). |
 
 Use these arguments with the `docker build` command to customize your image.
 Alternatively, you can change the default values for these arguments directly in the [Dockerfile](https://github.com/mathworks-ref-arch/matlab-on-databricks/blob/main/Dockerfile).
@@ -119,6 +120,16 @@ If your network restricts access to the public PyPI registry, you can specify a 
 ```bash
 docker build --build-arg PIP_INDEX_URL=https://my-artifactory.example.com/api/pypi/pypi-remote/simple -t matlab/databricks/desktop:r2026a-dbx17.3 .
 ```
+
+#### Build an Image with Additional Python Packages
+
+To install additional Python packages into the image at build time, use the `ADDITIONAL_PIP_PACKAGES` argument. Provide a space-separated list of packages, with optional version specifiers.
+
+```bash
+docker build --build-arg ADDITIONAL_PIP_PACKAGES="numpy==2.1.3 pandas>=2.0" -t matlab/databricks/desktop:r2026a-dbx17.3 .
+```
+
+The build fails if any specified package cannot be installed, ensuring the resulting image always contains the packages you requested.
 
 ## More MATLAB Docker Resources
 

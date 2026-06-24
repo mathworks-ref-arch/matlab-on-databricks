@@ -24,7 +24,9 @@ class TestContainer:
         """
         assert docker_host.package(package).is_installed
 
-    @pytest.mark.parametrize("package", ["matlab-proxy", "ipywidgets", "matlabengine"])
+    @pytest.mark.parametrize(
+        "package", ["matlab-proxy", "ipywidgets", "matlabengine", "build"]
+    )
     def test_python_packages(
         self,
         docker_host,

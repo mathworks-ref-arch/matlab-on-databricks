@@ -50,6 +50,8 @@ ARG INCLUDE_JRE=1
 ARG INCLUDE_GPU=0
 # Specify a custom PyPI index URL (e.g., internal Artifactory) to use for pip installs.
 ARG PIP_INDEX_URL
+# Specify additional Python packages to install via pip. Example: "numpy==2.1.3 pandas>=2.0"
+ARG ADDITIONAL_PIP_PACKAGES=""
 
 #################################################################################################
 ## Build stage that installs MATLAB and its dependencies.
@@ -67,6 +69,7 @@ ARG INCLUDE_JRE
 ARG INCLUDE_GPU
 ARG DATABRICKS_RUNTIME_VERSION
 ARG PIP_INDEX_URL
+ARG ADDITIONAL_PIP_PACKAGES
 
 USER root
 
@@ -149,7 +152,7 @@ EXPOSE 8888
 
 # Explicit installation of ipywidgets if not already present
 # Selecting version 7.8.1 as that is the latest version of ipywidgets supported in Databricks Runtime
-RUN ${PYTHON3} -m pip install --no-cache-dir matlab-proxy build && \
+RUN ${PYTHON3} -m pip install --no-cache-dir matlab-proxy build ${ADDITIONAL_PIP_PACKAGES} && \
     (${PYTHON3} -m pip show ipywidgets || ${PYTHON3} -m pip install ipywidgets==7.8.1)
 
 #######################################################################
