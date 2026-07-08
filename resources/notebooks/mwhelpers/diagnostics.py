@@ -175,12 +175,12 @@ def _get_matlab_proxy_info(username: str) -> str:
         return "MATLAB Proxy not found"
 
 
-def check_internet_connection(url: str, timeout: int = 5) -> bool:
+def check_internet_connection(url: str, timeout: float = 5) -> bool:
     """
     Check if the current environment has a valid connection to the specified URL.
     Args:
         url (str): The URL to check.
-        timeout (int): The timeout in seconds for the connection attempt.
+        timeout (float): The timeout in seconds for the connection attempt.
     Returns:
         bool: True if the environment is valid, False otherwise.
     """

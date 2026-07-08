@@ -13,8 +13,7 @@ def get():
         parent_widget.children = parent_widget.children + (widget,)
 
     ## Set CSS
-    style = widgets.HTML(
-        """
+    style = widgets.HTML("""
     <style>
     .widget-button {
         font-family: -apple-system, BlinkMacSystemFont, "San Francisco", "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Noto Sans", Arial, "Helvetica Neue", Helvetica, lucida, sans-serif; !important
@@ -68,6 +67,13 @@ def get():
         color: #0076a8;
     }
 
+    /* Button styled as hyperlink - matches link color in both light and dark themes */
+    .dbx-button-as-link {
+        color: -webkit-link !important;
+        cursor: pointer !important;
+        text-decoration: underline !important;
+    }
+
     /* Margin top - Medium */
     .margin-top-md {
         margin-top: 34px;
@@ -85,16 +91,14 @@ def get():
         word-break: break-word;  /* breaks long unbreakable strings (e.g. long paths, URLs) */
     }
     </style>
-    """
-    )
+    """)
     ### Load the style
     display_widget(style)
 
     ## Section Header : Title
     title_html = widgets.HBox(
         [
-            widgets.HTML(
-                """
+            widgets.HTML("""
             <style>
                 h1 {
                     font-family: -apple-system, BlinkMacSystemFont, "San Francisco", "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Noto Sans", Arial, "Helvetica Neue", Helvetica, lucida, sans-serif;
@@ -106,8 +110,7 @@ def get():
             <div style="display: flex; align-items: center; justify-content: center; padding: 0px;">
                 <h1>Connect to MATLAB</h1>
             </div>
-            """
-            )
+            """)
         ],
         layout=widgets.Layout(
             width="100%",
@@ -157,7 +160,7 @@ def get():
             min_width="480px",
             box_sizing="border-box",
             margin="0 48px 24px 0",
-            align_items="center",
+            align_items="baseline",
         ),
     )
 
@@ -168,6 +171,65 @@ def get():
         style={"description_width": "initial", "text_color": "#616161"},
     )
 
+    psp_version_label = widgets.Label("MATLAB Interface for Databricks:")
+    psp_installed_version = dsp.read_installed_version(username=get_username())
+
+    if psp_installed_version:
+        # If the DSP is already installed, show the installed version.
+        psp_version_html = widgets.HTML(
+            value=psp_installed_version,
+            style={"description_width": "initial", "text_color": "#616161"},
+        )
+        psp_version_hbox = widgets.HBox(
+            [psp_version_label, psp_version_html],
+            layout=widgets.Layout(
+                flex="1 1 0",
+                min_width="480px",
+                box_sizing="border-box",
+                margin="0 48px 24px 0",
+                align_items="baseline",
+            ),
+        )
+    else:
+        # Show a message with a button to direct users to the installation instructions.
+        psp_version_html = widgets.HTML(
+            value="Not installed, click ",
+            style={"description_width": "initial", "text_color": "#616161"},
+        )
+
+        click_to_install_button = widgets.Button(
+            description="here",
+            style={"button_color": "white"},
+            layout=widgets.Layout(width="auto", height="24px", padding="0px 0px"),
+        )
+        click_to_install_button.add_class("dbx-button-as-link")
+
+        psp_version_html_suffix = widgets.HTML(
+            value=" for installation instructions.",
+            style={"description_width": "initial", "text_color": "#616161"},
+        )
+
+        psp_version_hbox = widgets.HBox(
+            [
+                psp_version_label,
+                psp_version_html,
+                click_to_install_button,
+                psp_version_html_suffix,
+            ],
+            layout=widgets.Layout(
+                flex="1 1 0",
+                min_width="480px",
+                box_sizing="border-box",
+                margin="0 48px 24px 0",
+                align_items="baseline",
+            ),
+        )
+
+        def open_matlab_interface_accordion(b):
+            configuration_accordion.selected_index = 1
+
+        click_to_install_button.on_click(open_matlab_interface_accordion)
+
     clusterid_hbox = widgets.HBox(
         [clusterid_label, clusterid_html],
         layout=widgets.Layout(
@@ -175,7 +237,7 @@ def get():
             min_width="480px",
             box_sizing="border-box",
             margin="0 48px 24px 0",
-            align_items="center",
+            align_items="baseline",
         ),
     )
 
@@ -254,7 +316,7 @@ def get():
             layout={"width": "auto", "height": "160px", "border": ""},
         )
         available_matlab_sessions_label = widgets.HTML(
-            value="<b>Available MATLAB Instances</b>"
+            value="<b>Available MATLAB Sessions</b>"
         )
         refresh_matlab_button = widgets.Button(
             description="Refresh",
@@ -320,7 +382,7 @@ def get():
         )
 
         box_upper_row1 = widgets.HBox(
-            [username_hbox, clustername_hbox, clusterid_hbox],
+            [username_hbox, clustername_hbox, clusterid_hbox, psp_version_hbox],
             layout=widgets.Layout(
                 display="flex",
                 flex_flow="row wrap",  # side-by-side when wide, stacked when narrow
@@ -466,7 +528,7 @@ def get():
             [
                 installed_toolboxes_label,
                 widgets.HTML(
-                    value="<span style='color: #616161;'>Add a new instance to access recently installed toolboxes.</span>",
+                    value="<span style='color: #616161;'>Add a new MATLAB session to access recently installed toolboxes.</span>",
                     layout=widgets.Layout(margin="0 0 8px 0"),
                 ),
                 installed_toolboxes_inner_vbox,
@@ -625,15 +687,22 @@ def get():
 
             nonlocal installed_version
             installed_version = dsp.read_installed_version(get_username())
+            new_session_message = "<br><span style='color: #F57C00; font-size: 12px;'>Add a new session to open MATLAB with the newly installed version.</span>"
             if installed_version:
-                support_package_status_html.value = f"<span style='color: #616161;'>&#9989; Version {installed_version} installed successfully. Available from your next MATLAB session.</span>"
+                support_package_status_html.value = f"<span style='color: #616161;'>&#9989; Version {installed_version} installed successfully.</span>{new_session_message}"
             else:
-                support_package_status_html.value = "<span style='color: #616161;'>&#9989; Installed successfully. Available from your next MATLAB session.</span>"
+                support_package_status_html.value = f"<span style='color: #616161;'>&#9989; Installed successfully.</span>{new_session_message}"
 
             # Restore UI state after installation is complete.
             install_databricks_support_package_button.disabled = False
             databricks_support_package_download_button.disabled = False
             databricks_support_package_location.disabled = False
+
+            # Update the installed version in the UI
+            if installed_version:
+                psp_version_html.value = installed_version
+                # Remove the button and suffix
+                psp_version_hbox.children = [psp_version_label, psp_version_html]
 
         matlab_interface_for_databricks_vbox = widgets.VBox(
             [
