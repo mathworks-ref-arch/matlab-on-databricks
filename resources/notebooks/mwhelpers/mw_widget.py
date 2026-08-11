@@ -571,10 +571,9 @@ def get():
         install_databricks_support_package_button.add_class("dbx-button-text-white")
 
         installed_version = dsp.read_installed_version(get_username())
+        _initial_status = ""
         if installed_version:
             _initial_status = f"<span style='color: #616161;'>Version {installed_version} installed.</span>"
-        else:
-            _initial_status = ""
         support_package_status_html = widgets.HTML(value=_initial_status)
 
         @app_outputs.capture(clear_output=True)

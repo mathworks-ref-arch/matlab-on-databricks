@@ -251,6 +251,16 @@ class TestResolveLatestDspFromInterfaceDirectory:
         assert error == ""
         assert "1.0.0" in path
 
+    def test_returns_error_on_unexpected_exception(self, mocker, tmp_path):
+        mocker.patch.dict(
+            "os.environ",
+            {"MW_INTERFACE_DIRECTORY_DEFAULT": str(tmp_path)},
+        )
+        mocker.patch("pathlib.Path.is_dir", side_effect=OSError("permission denied"))
+        path, error = dsp.resolve_latest_dsp_from_interface_directory()
+        assert path == ""
+        assert "Error while resolving latest DSP" in error
+
 
 class TestRequiredEnvVars:
     def test_returns_expected_env_vars(self, mocker):

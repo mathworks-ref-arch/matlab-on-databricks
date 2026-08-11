@@ -206,42 +206,48 @@ def resolve_latest_dsp_from_interface_directory() -> tuple[str, str]:
         full path to the latest zip and error_message is empty. On failure,
         zip_path is empty and error_message describes the issue.
     """
-    interface_dir = os.environ.get("MW_INTERFACE_DIRECTORY_DEFAULT", "")
-    if not interface_dir:
-        return ("", "")
+    try:
+        interface_dir = os.environ.get("MW_INTERFACE_DIRECTORY_DEFAULT", "")
+        if not interface_dir:
+            return ("", "")
 
-    versions_dir = Path(interface_dir) / "Versions"
-    if not versions_dir.is_dir():
-        return (
-            "",
-            f"MW_INTERFACE_DIRECTORY_DEFAULT is set to '{interface_dir}' "
-            f"but '{versions_dir}' directory does not exist.",
-        )
-
-    version_entries = []
-    for entry in versions_dir.iterdir():
-        if entry.is_dir():
-            parsed = _parse_semver(entry.name)
-            if parsed is not None:
-                version_entries.append((parsed, entry))
-
-    if not version_entries:
-        return ("", f"No valid version directories found in '{versions_dir}'.")
-
-    # Sort by parsed semver, descending, and pick the latest
-    version_entries.sort(key=lambda x: x[0], reverse=True)
-
-    for parsed_ver, version_dir in version_entries:
-        zip_files = list(version_dir.glob("*.zip"))
-        if len(zip_files) == 1:
-            return (str(zip_files[0]), "")
-        elif len(zip_files) > 1:
+        versions_dir = Path(interface_dir) / "Versions"
+        if not versions_dir.is_dir():
             return (
                 "",
-                f"Multiple zip files found in '{version_dir}'. Expected exactly one.",
+                f"MW_INTERFACE_DIRECTORY_DEFAULT is set to '{interface_dir}' "
+                f"but '{versions_dir}' directory does not exist.",
             )
 
-    return ("", f"No zip files found in any version directory under '{versions_dir}'.")
+        version_entries = []
+        for entry in versions_dir.iterdir():
+            if entry.is_dir():
+                parsed = _parse_semver(entry.name)
+                if parsed is not None:
+                    version_entries.append((parsed, entry))
+
+        if not version_entries:
+            return ("", f"No valid version directories found in '{versions_dir}'.")
+
+        # Sort by parsed semver, descending, and pick the latest
+        version_entries.sort(key=lambda x: x[0], reverse=True)
+
+        for parsed_ver, version_dir in version_entries:
+            zip_files = list(version_dir.glob("*.zip"))
+            if len(zip_files) == 1:
+                return (str(zip_files[0]), "")
+            elif len(zip_files) > 1:
+                return (
+                    "",
+                    f"Multiple zip files found in '{version_dir}'. Expected exactly one.",
+                )
+
+        return (
+            "",
+            f"No zip files found in any version directory under '{versions_dir}'.",
+        )
+    except Exception as e:
+        return ("", f"Error while resolving latest DSP: {e}")
 
 
 def required_env_vars(dbx_context) -> dict[str, str]:
