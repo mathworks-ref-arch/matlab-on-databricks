@@ -48,12 +48,12 @@ jobs:
 
   unit_tests:
     needs: changes
-    if: ${{ needs.changes.result == 'success' && needs.changes.outputs.mwhelpers == 'true' }}
+    if: ${{ needs.changes.outputs.mwhelpers == 'true' }}
     uses: ./.github/workflows/run-unit-tests.yml
 
   build_matlab_image:
     needs: changes
-    if: ${{ needs.changes.result == 'success' && needs.changes.outputs.docker_matlab == 'true' }}
+    if: ${{ needs.changes.outputs.docker_matlab == 'true' }}
     uses: ./.github/workflows/docker-pipeline.yml
     with:
       image_type: 'matlab'
@@ -64,7 +64,7 @@ jobs:
 
   build_runtime_image:
     needs: changes
-    if: ${{ needs.changes.result == 'success' && needs.changes.outputs.docker_runtime == 'true' }}
+    if: ${{ needs.changes.outputs.docker_runtime == 'true' }}
     uses: ./.github/workflows/docker-pipeline.yml
     with:
       image_type: 'runtime'
@@ -74,7 +74,7 @@ jobs:
 
   integration_with_latest_release:
     needs: changes
-    if: ${{ needs.changes.result == 'success' && needs.changes.outputs.docker_matlab != 'true' && needs.changes.outputs.mwhelpers == 'true' }}
+    if: ${{ needs.changes.outputs.docker_matlab != 'true' && needs.changes.outputs.mwhelpers == 'true' }}
     uses: ./.github/workflows/run-integration-tests.yml
     with:
       docker_image: ${{ format('ghcr.io/{0}/matlab:R2026a-17.3', github.repository) }}

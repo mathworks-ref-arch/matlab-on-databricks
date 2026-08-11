@@ -27,7 +27,7 @@ on:
         required: false
         default: false
       promote:
-        description: "Push production-tagged image to GHCR after all tests pass"
+        description: "Push the tested image to GHCR after all tests pass"
         type: boolean
         required: false
         default: false
@@ -42,6 +42,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       contents: read
       packages: write
@@ -149,7 +150,7 @@ jobs:
           DB_RUNTIME: ${{ inputs.databricks_runtime }}
           MATLAB_LICENSE_FILE: ${{ secrets.MATLAB_LICENSE_FILE }}
 
-      - name: Promote image
+      - name: Push image to GHCR
         if: ${{ success() && inputs.promote }}
         env:
           IMAGE_TAG: ${{ env.IMAGE_TAG }}

@@ -1,0 +1,95 @@
+# Copyright 2026 The MathWorks, Inc.
+bundle:
+  name: system_test_bundle
+  engine: direct
+
+workspace:
+  root_path: ~/${var.matlab_release}-${var.databricks_runtime}-${var.run_id}
+
+variables:
+  docker_image:
+    description: "Full Docker image URL (e.g., ghcr.io/org/repo/matlab:R2026a-17.3)"
+  docker_username:
+    description: "Username for Docker image pull authentication"
+  docker_password:
+    description: "Token/password for Docker image pull authentication"
+  matlab_release:
+    description: "MATLAB release (e.g., R2026a)"
+    default: R2026a
+  databricks_runtime:
+    description: "Databricks Runtime version (e.g., 17.3)"
+    default: "17.3"
+  node_type_id:
+    description: "Cloud-specific compute node type (e.g., Standard_DS3_v2 for Azure, i3.xlarge for AWS)"
+    default: "Standard_DS3_v2"
+  run_id:
+    description: "Unique identifier for this deployment (e.g., CI run ID)"
+    default: "local"
+
+sync:
+  include:
+    - ./notebooks/**
+    - ./suite/**
+
+resources:
+  jobs:
+    system_test:
+      name: "system-test-${var.matlab_release}-${var.run_id}"
+      job_clusters:
+        - job_cluster_key: matlab_cluster
+          new_cluster:
+            # scala2.13 assumes DBR 16.x+; DBR <= 15.4 ships scala2.12
+            spark_version: "${var.databricks_runtime}.x-scala2.13"
+            num_workers: 0
+            node_type_id: "${var.node_type_id}"
+            data_security_mode: SINGLE_USER
+            docker_image:
+              url: "${var.docker_image}"
+              basic_auth:
+                username: "${var.docker_username}"
+                password: "${var.docker_password}"
+            spark_env_vars:
+              MW_TEST_USERNAME: "matlab_test_user"
+              MW_LICENSE_FILE_PATH: "/tmp/license.lic"
+              PYTHONPATH: "${workspace.file_path}/notebooks"
+              MWI_SHUTDOWN_ON_IDLE_TIMEOUT: "90"
+            runtime_engine: STANDARD
+            spark_conf:
+              spark.databricks.cluster.profile: singleNode
+              spark.databricks.unityCatalog.volumes.enabled: "true"
+              spark.databricks.unityCatalog.hms.federation.enabled: "true"
+              spark.databricks.isv.product: "MathWorks_MATLAB/26.1.0" # Identifies the partner product for Databricks ISV usage tracking
+              spark.master: "local[*]"
+            custom_tags:
+              ResourceClass: SingleNode
+              Purpose: SystemTest
+      tasks:
+        - task_key: setup_license
+          job_cluster_key: matlab_cluster
+          notebook_task:
+            notebook_path: ./notebooks/setup_license.py
+            source: WORKSPACE
+          timeout_seconds: 900
+
+        - task_key: install_dsp
+          depends_on:
+            - task_key: setup_license
+          job_cluster_key: matlab_cluster
+          notebook_task:
+            notebook_path: ./notebooks/install_dsp.py
+            source: WORKSPACE
+          timeout_seconds: 900
+
+        - task_key: run_tests
+          depends_on:
+            - task_key: install_dsp
+          job_cluster_key: matlab_cluster
+          notebook_task:
+            notebook_path: ./notebooks/run_tests.py
+            source: WORKSPACE
+          timeout_seconds: 900
+
+targets:
+  ci:
+    default: true
+    mode: development

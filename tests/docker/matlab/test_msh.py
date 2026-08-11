@@ -18,7 +18,8 @@ MSH_INSTALL_ROOT = "/usr/local/MathWorks/ServiceHost/"
 )
 class TestMSHIntegration:
     @pytest.fixture(scope="class")
-    def msh_versioned_root_path(self, docker_host):
+    @classmethod
+    def msh_versioned_root_path(cls, docker_host):
         """
         Fixture to dynamically locate the versioned MSH directory.
 

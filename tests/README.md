@@ -24,6 +24,10 @@ execution commands, and development guidelines.
 - [MATLAB Runtime image tests (`tests/docker/runtime/`)](./docker/runtime/README.md)
 - [Docker integration tests (`tests/docker/integration/`)](./docker/integration/README.md)
 
+### System Tests
+
+- [System tests (`tests/system/`)](./system/README.md)
+
 ## Shared Linting
 
 This repository uses `pre-commit` to run linters and formatters across test code.
