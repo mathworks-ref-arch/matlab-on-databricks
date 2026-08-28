@@ -49,9 +49,12 @@ First, use the MATLAB [Dockerfile](/resources/dockerfiles/matlab/Dockerfile) in 
 
 Push the built image to your organization's container registry.
 
+Note: Pushing an image requires you to authenticate to your container registry provider's CLI first (for example, `az login` for Azure, or configuring AWS credentials for ECR).
+
 ### Example: Azure Container Registry
 
 ```bash
+az login
 az acr login --name <myRegistry>
 docker tag matlab-on-databricks:R2026a <myRegistry>.azurecr.io/matlab-on-databricks:R2026a
 docker push <myRegistry>.azurecr.io/matlab-on-databricks:R2026a
