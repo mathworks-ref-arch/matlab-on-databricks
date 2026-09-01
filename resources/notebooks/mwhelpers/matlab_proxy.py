@@ -174,10 +174,16 @@ def start(
     # the cluster could auto-terminate before the periodic keep-alive loop starts monitoring,
     # ensuring a more stable user experience.
     if "MWI_SHUTDOWN_ON_IDLE_TIMEOUT" in env:
-        threading.Thread(
-            target=dbx.run_keep_alive_command,
-            kwargs={"cluster_id": dbx.get_cluster_id()},
-        ).start()
+        try:
+            threading.Thread(
+                target=dbx.run_keep_alive_command,
+                kwargs={"cluster_id": dbx_context.clusterId},
+            ).start()
+        except Exception as e:
+            print(
+                "Warning: MATLAB session started, but the keep-alive could not "
+                f"be initialized ({e}). The cluster may auto-terminate on idle."
+            )
 
     return str(port)
 
