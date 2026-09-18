@@ -121,18 +121,14 @@ class TestGetDataSecurityMode:
 
 
 class TestCurrentUserName:
-    @pytest.mark.parametrize(
-        "user_input, expected_output",
-        [
-            ("testuser@company.com", "testuser"),
-            ("admin", "admin"),
-        ],
-    )
-    def test_returns_username(
-        self, mock_databricks_context, user_input, expected_output
-    ):
-        mock_databricks_context.user = user_input
-        assert dbx.current_user_name() == expected_output
+    def test_delegates_to_user_module(self, mock_databricks_context, mocker):
+        mock_databricks_context.user = "testuser@company.com"
+        to_valid = mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.user.to_valid_linux_username",
+            return_value="testuser",
+        )
+        assert dbx.current_user_name() == "testuser"
+        to_valid.assert_called_once_with("testuser@company.com")
 
 
 class TestRuntimeVersion:

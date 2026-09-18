@@ -12,7 +12,7 @@ from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import compute
 from dbruntime.databricks_repl_context import get_context as get_databricks_context
 
-from . import matlab_proxy, sanitize_url
+from . import matlab_proxy, sanitize_url, user
 
 
 class DatabricksExecutionContext:
@@ -103,13 +103,8 @@ def cluster_autotermination_minutes() -> int:
 
 
 def current_user_name() -> str:
-    # If username contains and email address, remove the domain part
-    # and return only the username
-    # Example: "prabhakk@mw.com" -> "prabhakk"
-    username = get_context().user
-    if "@" in username:
-        username = username.split("@")[0]
-    return username
+    """Return the Linux username for the current Databricks user."""
+    return user.to_valid_linux_username(get_context().user)
 
 
 def runtime_version() -> list[int]:
