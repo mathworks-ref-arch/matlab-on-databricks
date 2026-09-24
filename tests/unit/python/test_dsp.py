@@ -262,6 +262,98 @@ class TestResolveLatestDspFromInterfaceDirectory:
         assert "Error while resolving latest DSP" in error
 
 
+class TestShouldAutoInstall:
+    @staticmethod
+    def _make_zip(tmp_path, version: str) -> str:
+        import zipfile
+
+        zip_path = tmp_path / "matlab-databricks.zip"
+        with zipfile.ZipFile(zip_path, "w") as zf:
+            zf.writestr("matlab-databricks/VERSION", version)
+        return str(zip_path)
+
+    @pytest.mark.parametrize(
+        "zip_version, installed, expected",
+        [
+            pytest.param("1.2.3", "1.2.3", False, id="version_matches_installed"),
+            pytest.param("2.0.0", "1.2.3", True, id="version_differs"),
+            pytest.param("1.0.0", "", True, id="nothing_installed"),
+            pytest.param("1.2.3\n", "1.2.3", False, id="strips_whitespace"),
+            pytest.param("1.0.0", "2.0.0", True, id="rollback_to_older_version"),
+        ],
+    )
+    def test_uses_resolved_zip_version(
+        self, tmp_path, zip_version, installed, expected
+    ):
+        zip_path = self._make_zip(tmp_path, zip_version)
+        assert dsp._should_auto_install(zip_path, installed) is expected
+
+    def test_returns_false_when_no_resolved_path(self):
+        assert dsp._should_auto_install("", "1.0.0") is False
+
+    def test_returns_false_when_zip_unreadable(self, tmp_path):
+        bad_zip = tmp_path / "missing.zip"
+        assert dsp._should_auto_install(str(bad_zip), "1.2.3") is False
+
+
+class TestInstallIfNeeded:
+    def test_installs_when_newer(self, mocker):
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp._should_auto_install",
+            return_value=True,
+        )
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp.read_installed_version",
+            side_effect=["1.0.0", "2.0.0"],
+        )
+        mock_unzip = mocker.patch(
+            "resources.notebooks.mwhelpers.dsp.unzip", return_value=True
+        )
+        assert dsp.install_if_needed("testuser", "/tmp/package.zip") == (True, "2.0.0")
+        mock_unzip.assert_called_once_with(
+            username="testuser", zip_file_path="/tmp/package.zip"
+        )
+
+    def test_skips_when_not_needed(self, mocker):
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp._should_auto_install",
+            return_value=False,
+        )
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp.read_installed_version",
+            return_value="1.2.3",
+        )
+        mock_unzip = mocker.patch("resources.notebooks.mwhelpers.dsp.unzip")
+        assert dsp.install_if_needed("testuser", "/tmp/package.zip") == (False, "1.2.3")
+        mock_unzip.assert_not_called()
+
+    def test_raises_when_unzip_fails(self, mocker):
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp._should_auto_install",
+            return_value=True,
+        )
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp.read_installed_version",
+            return_value="1.0.0",
+        )
+        mocker.patch("resources.notebooks.mwhelpers.dsp.unzip", return_value=False)
+        with pytest.raises(RuntimeError, match="Failed to extract"):
+            dsp.install_if_needed("testuser", "/tmp/package.zip")
+
+    def test_raises_when_no_version_after_extract(self, mocker):
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp._should_auto_install",
+            return_value=True,
+        )
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp.read_installed_version",
+            side_effect=["1.0.0", ""],
+        )
+        mocker.patch("resources.notebooks.mwhelpers.dsp.unzip", return_value=True)
+        with pytest.raises(RuntimeError, match="no version was found"):
+            dsp.install_if_needed("testuser", "/tmp/package.zip")
+
+
 class TestRequiredEnvVars:
     def test_returns_expected_env_vars(self, mocker):
         mock_context = mocker.Mock(

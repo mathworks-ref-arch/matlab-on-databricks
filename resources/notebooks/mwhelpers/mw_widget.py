@@ -1001,6 +1001,31 @@ def get():
             install_databricks_support_package
         )
 
+        def _auto_install_dsp():
+            # Auto-install the MATLAB Interface for Databricks from the
+            # admin-provided interface directory (MW_INTERFACE_DIRECTORY_DEFAULT).
+            nonlocal installed_version
+            try:
+                installed_newer, installed_version = dsp.install_if_needed(
+                    username=get_username(),
+                    resolved_zip_path=resolved_dsp_path,
+                )
+
+                if installed_newer:
+                    with app_outputs:
+                        print(f"Installation complete. Version {installed_version}.")
+                    refresh_installed_toolboxes()
+                    support_package_status_html.value = f"<span style='color: #616161;'>&#9989; Version {installed_version} installed. Add a new session to open MATLAB with it.</span>"
+                    psp_version_html.value = installed_version
+                    psp_version_hbox.children = [psp_version_label, psp_version_html]
+            except Exception as e:
+                with app_outputs:
+                    print(f"Automatic installation failed: {e}")
+                    print("Use the Install button below to install manually.")
+                support_package_status_html.value = "<span style='color: #616161;'>&#10060; Automatic installation failed. Use the Install button below.</span>"
+
+        _auto_install_dsp()
+
     diagnostics_overview_text = widgets.HTML(
         """
     <p>

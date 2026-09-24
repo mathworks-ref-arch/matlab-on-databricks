@@ -82,7 +82,7 @@ You can either download the package for your users and store it on a volume from
 
 - To provide the package to your users, download it from [MATLAB Interface for Databricks (MathWorks)](https://www.mathworks.com/solutions/partners/databricks.html). Store the package at `<interface directory>/Versions/<Semantic Version Number>/filename.zip`, where `<interface directory>` is the directory you created and then specified in your policy using the `spark_env_vars.MW_INTERFACE_DIRECTORY_DEFAULT` field.
 
-    Provide your users with the path to the package. They can install the package by following the instructions in [Run MATLAB Interactively on Databricks: Install MATLAB Interface for Databricks](../run-matlab-interactively-on-databricks.md#step-3-install-matlab-interface-for-databricks-package).
+    When you store the package this way, the latest version is installed automatically the first time each user runs the **Connect to MATLAB** notebook, so your users do not need to install it manually. If you later publish a higher version number under `<interface directory>/Versions/`, users are automatically updated to it the next time they run the notebook. Your users can still install a different version or a package from a custom path manually, by following the instructions in [Run MATLAB Interactively on Databricks: Install MATLAB Interface for Databricks](../run-matlab-interactively-on-databricks.md#step-3-install-matlab-interface-for-databricks-package).
 
 - Alternatively, your users can both download and install the package themselves by following the instructions in [Run MATLAB Interactively on Databricks: Install MATLAB Interface for Databricks](../run-matlab-interactively-on-databricks.md#step-3-install-matlab-interface-for-databricks-package).
 

@@ -250,6 +250,59 @@ def resolve_latest_dsp_from_interface_directory() -> tuple[str, str]:
         return ("", f"Error while resolving latest DSP: {e}")
 
 
+def _should_auto_install(resolved_zip_path: str, installed_version: str) -> bool:
+    """Decide whether to auto-install the DSP resolved from the interface directory.
+
+    Auto-install should happen only when a package was resolved and its version
+    differs from what is already installed.
+
+    Args:
+        resolved_zip_path: Path to the resolved DSP zip, or "" if none resolved.
+        installed_version: The currently installed DSP version, or "" if none.
+
+    Returns:
+        bool: True if the resolved package should be installed, else False.
+    """
+    if not resolved_zip_path:
+        return False
+    try:
+        resolved_version = read_version_from_zip(Path(resolved_zip_path)).strip()
+    except Exception:
+        return False
+    return bool(resolved_version) and resolved_version != installed_version
+
+
+def install_if_needed(username: str, resolved_zip_path: str) -> tuple[bool, str]:
+    """Install the resolved DSP when it is newer than the installed version.
+
+    Args:
+        username: The OS user.
+        resolved_zip_path: Path to the resolved DSP zip, or "" if none resolved.
+
+    Returns:
+        A tuple of (installed_newer, installed_version) where ``installed_newer``
+        is ``True`` only when a newer version was successfully extracted, and
+        ``installed_version`` is the installed DSP version after the operation
+        (empty string if not installed).
+
+    Raises:
+        RuntimeError: If an install failed.
+    """
+    installed_version = read_installed_version(username=username)
+    if not _should_auto_install(resolved_zip_path, installed_version):
+        return (False, installed_version)
+
+    if not unzip(username=username, zip_file_path=resolved_zip_path):
+        raise RuntimeError("Failed to extract the MATLAB Interface for Databricks.")
+
+    installed_version = read_installed_version(username=username)
+    if not installed_version:
+        raise RuntimeError(
+            "MATLAB Interface for Databricks was extracted but no version was found."
+        )
+    return (True, installed_version)
+
+
 def required_env_vars(dbx_context) -> dict[str, str]:
     """Return the environment variables required by the DSP at runtime.
 

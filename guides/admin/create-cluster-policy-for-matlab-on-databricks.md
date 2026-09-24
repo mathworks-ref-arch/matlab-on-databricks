@@ -95,7 +95,7 @@ These fields are required for every MATLAB Desktop cluster policy. They configur
 }
 ```
 
-- Create a directory on a volume that your users can read but not write to. You use this directory to store some files later. In the field `spark_env_vars.MW_INTERFACE_DIRECTORY_DEFAULT`, replace `/Volumes/main/default/myvolume/MathWorks` with the actual path to the new directory you have created.
+- Create a directory on a volume that your users can read but not write to. You use this directory to store some files later. In the field `spark_env_vars.MW_INTERFACE_DIRECTORY_DEFAULT`, replace `/Volumes/main/default/myvolume/MathWorks` with the actual path to the new directory you have created. When you later store the MATLAB Interface for Databricks package in this directory (see [Set Up MATLAB on Databricks](./set-up-matlab-on-databricks.md)), the latest version is installed automatically the first time each user runs the **Connect to MATLAB** notebook.
 
 - For the field `spark_conf.spark.databricks.isv.product`, replace the value `MathWorks_MATLAB/25.2.0` with the MATLAB release and version of your choice. The format is `MathWorks_MATLAB/<Release_Year>.<Release_Number>.0`:
   - `<Release_Year>` is the 2-digit year of the MATLAB release.

@@ -70,7 +70,9 @@ To investigate errors and view details of your environment, run diagnostics. Exp
 
 To run workflows for using Spark, or scaling MATLAB code in Databricks, you need to install a package called the MATLAB Interface for Databricks. (If you only want to run MATLAB interactively, you do not need the package and can skip this step.)
 
-To install the package, you have two options:
+If your administrator set up an interface directory for your cluster (using the `spark_env_vars.MW_INTERFACE_DIRECTORY_DEFAULT` policy field), the latest package from that directory is installed automatically the first time you run the **Connect to MATLAB** notebook. In this case you do not need to do anything for this step. To confirm, check that the **MATLAB Interface for Databricks** version is shown at the top of the notebook and that "Databricks Support Package" appears in the **Installed Toolboxes** list.
+
+Otherwise, to install the package you have two options:
 
 - Ask your administrator if they followed the steps to [Download MATLAB Interface for Databricks](./admin/set-up-matlab-on-databricks.md#download-matlab-interface-for-databricks-package). If so, they can provide you the path to the volume where the package is stored. Expand the **MATLAB Interface for Databricks** section in the notebook, insert the path in the **Install Location** field, then click **Install**.
 
