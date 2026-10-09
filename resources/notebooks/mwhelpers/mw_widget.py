@@ -67,6 +67,12 @@ def get():
         color: #0076a8;
     }
 
+    /* Button that sizes to its label instead of wrapping the text */
+    .dbx-button-fit-content {
+        width: auto !important;
+        white-space: nowrap !important;
+    }
+
     /* Button styled as hyperlink - matches link color in both light and dark themes */
     .dbx-button-as-link {
         color: -webkit-link !important;
@@ -703,6 +709,86 @@ def get():
                 # Remove the button and suffix
                 psp_version_hbox.children = [psp_version_label, psp_version_html]
 
+            # DSP is now installed — enable the MATLAB Context controls.
+            activate_button.disabled = False
+            if not activate_context["done"]:
+                activate_status_html.value = ""
+
+        matlab_context_header_html = widgets.HTML(
+            value="<b>MATLAB Preferences</b>",
+            layout=widgets.Layout(margin="16px 0 0 0"),
+        )
+
+        matlab_context_description_html = widgets.HTML(
+            value="""
+        <div class="paragraph">Save and restore your MATLAB preferences so it persists across cluster restarts. You can also use it for other data you find helpful, like local projects that you want in your environment at startup. Note: The configuration will always be saved and restored from a default location (`/Users/&lt;username&gt;/MathWorks/Context/&lt;matlab-release&gt;/`) which cannot be modified.</div>
+        <br>
+        """
+        )
+        activate_button = widgets.Button(
+            description="Restore on startup",
+            style={"button_color": "#0076a8"},
+            icon="bolt",
+            disabled=not installed_version,
+            layout=widgets.Layout(width="auto"),
+        )
+        activate_button.add_class("dbx-button-text-white")
+        activate_button.add_class("dbx-button-fit-content")
+
+        context_buttons_hbox = widgets.HBox(
+            [activate_button],
+            layout=widgets.Layout(margin="0 0 4px 0"),
+        )
+
+        if installed_version:
+            _initial_activate_status = ""
+        else:
+            _initial_activate_status = (
+                "<span style='color: #616161;'>"
+                "Install the MATLAB Interface for Databricks above to enable context save/restore."
+                "</span>"
+            )
+        activate_status_html = widgets.HTML(value=_initial_activate_status)
+
+        # Tracks whether activation has already succeeded in this widget
+        # session, so the post-DSP-install hook doesn't clobber an
+        # "active" status with an empty string.
+        activate_context = {"done": False}
+
+        @app_outputs.capture(clear_output=True)
+        def run_activate(b):
+            activate_button.disabled = True
+            activate_status_html.value = (
+                "<span style='color: #616161;'>&#9203; Activating auto-save...</span>"
+            )
+            try:
+                print("Activating MATLAB preferences auto-save...")
+                config_path = dsp.get_default_pref_file_location(
+                    username=get_username()
+                )
+                print(f"Using configuration file: {config_path}")
+                dsp.start_saving_matlab_preferences(
+                    username=get_username(), config_path=config_path
+                )
+                activate_context["done"] = True
+                print("Auto-save activated successfully.")
+                print(
+                    "MATLAB sessions started from now on will restore and save your preferences."
+                )
+                activate_status_html.value = (
+                    f"<span style='color: #616161;'>&#9989; Auto-save active for {config_path}. "
+                    "Will apply to MATLAB sessions started from now on, on this cluster.</span>"
+                )
+            except Exception as e:
+                print(f"Auto-save activation failed: {e}")
+                activate_status_html.value = (
+                    f"<span style='color: #616161;'>&#10060; Error: {e}</span>"
+                )
+            finally:
+                activate_button.disabled = False
+
+        activate_button.on_click(run_activate)
+
         matlab_interface_for_databricks_vbox = widgets.VBox(
             [
                 widgets.HBox(
@@ -721,6 +807,10 @@ def get():
                 databricks_support_package_location_hbox,
                 install_databricks_support_package_button,
                 support_package_status_html,
+                matlab_context_header_html,
+                matlab_context_description_html,
+                context_buttons_hbox,
+                activate_status_html,
             ]
         )
 

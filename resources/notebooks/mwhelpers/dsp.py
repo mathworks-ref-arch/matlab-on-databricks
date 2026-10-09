@@ -9,6 +9,7 @@ Databricks cluster. Functions that accept a *username* argument raise
 import base64
 import os
 import subprocess
+import sys
 import zipfile
 from pathlib import Path
 
@@ -337,3 +338,93 @@ def required_env_vars(dbx_context) -> dict[str, str]:
         "SPARK_CONNECT_MODE_ENABLED": "1",
     }
     return dsp_envs
+
+
+def get_dsp_python_package_location(username: str) -> Path:
+    """Return the path to the DSP python package for the given user.
+
+    The python package is located at
+    ``<extraction_dir>/matlab-databricks/Software/Python``.
+
+    Args:
+        username: The OS user whose extraction directory is used.
+
+    Returns:
+        Path: The path to the DSP python package.
+    """
+    if not username:
+        raise ValueError("Aborting, no username provided.")
+    dsp_path = get_mwi_unzip_location(username)
+    return dsp_path / "matlab-databricks" / "Software" / "Python"
+
+
+def _add_dsp_python_package_to_sys_path(username: str) -> None:
+    """Add the DSP python package location to ``sys.path`` if not already present.
+
+    Args:
+        username: The OS user whose extraction directory is used.
+
+    Raises:
+        ValueError: If *username* is empty.
+    """
+    dsp_python_package_location = f"{get_dsp_python_package_location(username)}"
+    if dsp_python_package_location not in sys.path:
+        sys.path.insert(0, dsp_python_package_location)
+
+
+def get_default_pref_file_location(username: str) -> str:
+    """Return the default location of the MATLAB preferences file for the given user.
+
+    The preferences file is located at
+    "Workspace/Users/<username>/MathWorks/Context/<matlab_release>/mw_pref.json".
+
+    Args:
+        username: The OS user whose extraction directory is used.
+
+    Raises:
+        ModuleNotFoundError: If dsp is not installed
+    """
+    _add_dsp_python_package_to_sys_path(username)
+    from mw_context.mw_prefs import default_config_filename
+
+    return default_config_filename(verbose=True)
+
+
+def start_saving_matlab_preferences(username: str, config_path: str) -> None:
+    """
+    Start saving MATLAB preferences to the specified config path.
+
+    Restores any previously saved context immediately, and arranges for
+    MATLAB sessions started from now on to save their context on exit.
+
+    Args:
+        username: The OS user whose extraction directory is used.
+        config_path: Path to the ``mw_prefs.json`` configuration file.
+    """
+    _add_dsp_python_package_to_sys_path(username)
+    from mw_context.mw_prefs import startup
+
+    # This deliberately mutates the environment of this whole process (the notebook's
+    # Python REPL) rather than a copy. The copy would be discarded on return, and the
+    # process environment is precisely what carries the setting forward:
+    # matlab_proxy.start() builds each session's environment from os.environ.copy(), so
+    # only sessions spawned after this point inherit the variable. There is no
+    # corresponding pop(), so the setting stays active for the REPL process's lifetime.
+    #
+    # MATLAB sessions that will NOT see this variable, and so will not save or restore
+    # their context:
+    #   - Sessions already running when this is called. Each was handed its own copy of
+    #     the environment at spawn time and is unaffected by later changes.
+    #   - Any session started after the notebook state is cleared, the notebook is
+    #     detached, or the cluster restarts. The variable lives in the REPL process, not
+    #     on disk, so it dies with that process and the user must activate again. The
+    #     config file and saved archives themselves persist on /Workspace.
+    #   - matlab-proxy-app started outside this module (for example from a terminal in a
+    #     process that did not inherit this REPL's environment).
+    #
+    # Injecting the value into the copy matlab_proxy.start() builds would be cleaner to
+    # revoke, but it needs state that outlives one widget instance: re-running the
+    # notebook cell builds a fresh widget, so a value held in widget scope silently
+    # deactivates the feature while the user believes it is still on.
+    os.environ["MW_STARTUP_SHUTDOWN_CONFIG"] = config_path
+    startup(config_path, verbose=True)

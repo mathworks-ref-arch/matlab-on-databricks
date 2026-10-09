@@ -1,6 +1,8 @@
 # Copyright 2026 The MathWorks, Inc.
 
 import base64
+import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -352,6 +354,155 @@ class TestInstallIfNeeded:
         mocker.patch("resources.notebooks.mwhelpers.dsp.unzip", return_value=True)
         with pytest.raises(RuntimeError, match="no version was found"):
             dsp.install_if_needed("testuser", "/tmp/package.zip")
+
+
+class TestGetDspPythonPackageLocation:
+    def test_returns_expected_path(self, mocker):
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp.get_mwi_unzip_location",
+            return_value=Path("/local_disk0/testuser/matlab-interface-for-databricks"),
+        )
+        result = dsp.get_dsp_python_package_location("testuser")
+        assert result == Path(
+            "/local_disk0/testuser/matlab-interface-for-databricks"
+            "/matlab-databricks/Software/Python"
+        )
+
+    def test_raises_value_error_when_username_empty(self):
+        with pytest.raises(ValueError, match="no username provided"):
+            dsp.get_dsp_python_package_location("")
+
+    def test_raises_value_error_when_username_none(self):
+        with pytest.raises(ValueError, match="no username provided"):
+            dsp.get_dsp_python_package_location(None)
+
+
+@pytest.fixture
+def restore_sys_path():
+    """Restore ``sys.path`` after tests that add the DSP python package location."""
+    original = list(sys.path)
+    yield
+    sys.path[:] = original
+
+
+class TestAddDspPythonPackageToSysPath:
+    def test_inserts_package_location_at_front(self, mocker, restore_sys_path):
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp.get_dsp_python_package_location",
+            return_value=Path("/pkg/Python"),
+        )
+        dsp._add_dsp_python_package_to_sys_path("testuser")
+        assert sys.path[0] == "/pkg/Python"
+
+    def test_does_not_insert_duplicate_when_called_twice(
+        self, mocker, restore_sys_path
+    ):
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp.get_dsp_python_package_location",
+            return_value=Path("/pkg/Python"),
+        )
+        dsp._add_dsp_python_package_to_sys_path("testuser")
+        length_after_first_call = len(sys.path)
+        dsp._add_dsp_python_package_to_sys_path("testuser")
+        assert sys.path.count("/pkg/Python") == 1
+        assert len(sys.path) == length_after_first_call
+
+    def test_does_not_reinsert_existing_entry_at_front(self, mocker, restore_sys_path):
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp.get_dsp_python_package_location",
+            return_value=Path("/pkg/Python"),
+        )
+        sys.path.append("/pkg/Python")
+        dsp._add_dsp_python_package_to_sys_path("testuser")
+        assert sys.path.count("/pkg/Python") == 1
+        assert sys.path[0] != "/pkg/Python"
+
+    def test_raises_value_error_when_username_empty(self):
+        with pytest.raises(ValueError, match="no username provided"):
+            dsp._add_dsp_python_package_to_sys_path("")
+
+
+@pytest.fixture
+def fake_mw_prefs(mocker):
+    """Install a fake ``mw_context.mw_prefs`` module so the dynamic imports in
+    dsp resolve without the real support package being present."""
+    mw_context = types.ModuleType("mw_context")
+    mw_prefs = types.ModuleType("mw_context.mw_prefs")
+    mw_prefs.default_config_filename = mocker.Mock(
+        return_value="/some/path/mw_pref.json"
+    )
+    mw_prefs.startup = mocker.Mock()
+    mw_context.mw_prefs = mw_prefs
+    mocker.patch.dict(
+        sys.modules,
+        {"mw_context": mw_context, "mw_context.mw_prefs": mw_prefs},
+    )
+    return mw_prefs
+
+
+class TestGetDefaultPrefFileLocation:
+    def test_returns_default_config_filename(
+        self, mocker, fake_mw_prefs, restore_sys_path
+    ):
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp.get_dsp_python_package_location",
+            return_value=Path("/pkg/Python"),
+        )
+        result = dsp.get_default_pref_file_location("testuser")
+        assert result == "/some/path/mw_pref.json"
+        fake_mw_prefs.default_config_filename.assert_called_once_with(verbose=True)
+
+    def test_inserts_package_location_on_sys_path(
+        self, mocker, fake_mw_prefs, restore_sys_path
+    ):
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp.get_dsp_python_package_location",
+            return_value=Path("/pkg/Python"),
+        )
+        dsp.get_default_pref_file_location("testuser")
+        assert sys.path.count("/pkg/Python") == 1
+
+    def test_raises_value_error_when_username_empty(self):
+        with pytest.raises(ValueError, match="no username provided"):
+            dsp.get_default_pref_file_location("")
+
+
+class TestStartSavingMatlabPreferences:
+    def test_calls_startup_with_config_path(
+        self, mocker, fake_mw_prefs, restore_sys_path
+    ):
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp.get_dsp_python_package_location",
+            return_value=Path("/pkg/Python"),
+        )
+        dsp.start_saving_matlab_preferences("testuser", "/cfg/mw_pref.json")
+        fake_mw_prefs.startup.assert_called_once_with("/cfg/mw_pref.json", verbose=True)
+
+    def test_does_not_duplicate_sys_path_entry_when_called_twice(
+        self, mocker, fake_mw_prefs, restore_sys_path
+    ):
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp.get_dsp_python_package_location",
+            return_value=Path("/pkg/Python"),
+        )
+        dsp.start_saving_matlab_preferences("testuser", "/cfg/mw_pref.json")
+        dsp.start_saving_matlab_preferences("testuser", "/cfg/mw_pref.json")
+        assert sys.path.count("/pkg/Python") == 1
+
+    def test_sets_startup_shutdown_config_env_var(
+        self, mocker, fake_mw_prefs, restore_sys_path
+    ):
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp.get_dsp_python_package_location",
+            return_value=Path("/pkg/Python"),
+        )
+        mocker.patch.dict("os.environ", {}, clear=False)
+        dsp.start_saving_matlab_preferences("testuser", "/cfg/mw_pref.json")
+        assert dsp.os.environ["MW_STARTUP_SHUTDOWN_CONFIG"] == "/cfg/mw_pref.json"
+
+    def test_raises_value_error_when_username_empty(self):
+        with pytest.raises(ValueError, match="no username provided"):
+            dsp.start_saving_matlab_preferences("", "/cfg/mw_pref.json")
 
 
 class TestRequiredEnvVars:
