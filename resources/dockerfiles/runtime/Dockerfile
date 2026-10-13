@@ -10,7 +10,7 @@
 # 2. MATLAB Runtime dependencies are installed from mathworks-ref-arch/container-images repository
 # 3. MATLAB Runtime is installed
 
-# Specify the Databricks Image Runtime Version to use as the base image. Example 16.4, 17.3
+# Specify the Databricks Image Runtime Version to use as the base image. Example 16.4, 17.3, 18.3
 ARG DATABRICKS_RUNTIME_VERSION=17.3
 # Specify the version of Ubuntu used in the base image.
 ARG UBUNTU_VERSION=24.04
@@ -68,7 +68,7 @@ RUN if [ -z "${MATLAB_RUNTIME_URL}" ]; then \
     -agreeToLicense yes \
     -destinationFolder ${MCR_DOWNLOAD_LOCATION} \
     && mv ${MCR_DOWNLOAD_LOCATION}/R* ${MCR_INSTALL_LOCATION} \
-    && rm ${MCR_INSTALL_LOCATION}/sys/os/glnxa64/libstdc++.so.6* \
+    && rm -f ${MCR_INSTALL_LOCATION}/sys/os/glnxa64/libstdc++.so.6* \
     && cd / && rm -rf /mcr-install ${MCR_DOWNLOAD_LOCATION}
 
 # Work dir assumed by Databricks

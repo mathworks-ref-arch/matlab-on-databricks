@@ -4,4 +4,5 @@ ignored:
   - DL3003  # Use WORKDIR to switch to a directory
   - SC2046  # Quote this to prevent word splitting
   - DL3066  # Non-numeric user-id may not be resolvable by host system
+  - SC3012  # In POSIX sh, lexicographical > is undefined (Dockerfiles use bash via SHELL directive)
   - DL3064  # Potentially sensitive data should not be used in ARG or ENV (false positive for MWI_ENABLE_TOKEN_AUTH)

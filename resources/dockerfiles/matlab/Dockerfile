@@ -5,35 +5,36 @@
 
 ## Dockerfile to build MATLAB Container where:
 # 1. Base image is Databricks Runtime
-# 2. MATLAB R2026a using MATLAB Package Manager & install dependencies from mathworks-ref-arch/container-images repository
+# 2. MATLAB R2026b using MATLAB Package Manager & install dependencies from mathworks-ref-arch/container-images repository
 
 ### Dockerfile Build Commands:
 
 # By Default the container will be built for Databricks Runtime 17.3-LTS and Ubuntu 24.04.
-# docker build -t matlab-on-databricks:R2026a-17.3  .
+# docker build -t matlab-on-databricks:R2026b-17.3  .
 
 # To build the container for a different Databricks Runtime version or Ubuntu version, you can use the following commands:
 # docker build --build-arg DATABRICKS_RUNTIME_VERSION=15.4 \
 #              --build-arg UBUNTU_VERSION=22.04 \
-#              -t matlab-on-databricks:R2026a-15.4  .
+#              -t matlab-on-databricks:R2026b-15.4  .
 
 # The other build arguments can be used to specify the MATLAB release, product list, install location, and license server.
-# For example, to build the container with MATLAB R2026a, a specific product list, and a license server, you can use the following command:
-# docker build --build-arg MATLAB_RELEASE=R2026a
+# For example, to build the container with MATLAB R2026b, a specific product list, and a license server, you can use the following command:
+# docker build --build-arg MATLAB_RELEASE=R2026b
 #              --build-arg MATLAB_PRODUCT_LIST="MATLAB Deep_Learning_Toolbox Symbolic_Math_Toolbox"
-#              --build-arg MATLAB_INSTALL_LOCATION="/opt/matlab/R2026a"
+#              --build-arg MATLAB_INSTALL_LOCATION="/opt/matlab/R2026b"
 #              --build-arg LICENSE_SERVER=12345@hostname.com
 #              -t my_matlab_image_name .
 
 
-# Specify the Databricks Image Runtime Version to use as the base image. Example 16.4, 17.3
+# Specify the Databricks Image Runtime Version to use as the base image. Example 16.4, 17.3, 18.3
+# Refer https://hub.docker.com/r/databricksruntime/standard/tags for supported tags
 ARG DATABRICKS_RUNTIME_VERSION=17.3
 # Specify the version of Ubuntu used in the base image.
 ARG UBUNTU_VERSION=24.04
 # Use the python that is recommended by Databricks: https://docs.databricks.com/aws/en/compute/custom-containers#option-1-use-a-base-built-by-databricks
 ARG PYTHON3=/databricks/python3/bin/python3
 # Specify the MATLAB release to install.
-ARG MATLAB_RELEASE=R2026a
+ARG MATLAB_RELEASE=R2026b
 # Specify a MATLAB release update version (for example, U0 for the base release, or U1 for update 1).
 # For details, see: https://www.mathworks.com/help/install/ug/mpminstall.html#mw_37e5e202-ecc6-4e61-9fa4-22b81f9931d3
 # To install the latest available update, leave this argument empty.
@@ -44,7 +45,8 @@ ARG MATLAB_PRODUCT_LIST="MATLAB Database_Toolbox"
 ARG MATLAB_INSTALL_LOCATION="/opt/matlab/${MATLAB_RELEASE}"
 # Specify license server information using the format: port@hostname
 ARG LICENSE_SERVER
-# Whether to install Java or use built-in
+# Whether to install Java or use built-in. For R2026b and later, Java is not included in the MATLAB installation,
+# so this argument is overridden to 0 for R2026b and later releases.
 ARG INCLUDE_JRE=1
 # Whether or not to include gpu libraries
 ARG INCLUDE_GPU=0
@@ -78,7 +80,8 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 RUN [ -d /usr/share/X11/xkb ] || mkdir -p /usr/share/X11/xkb
 
-ARG MATLAB_DEPS_URL="https://raw.githubusercontent.com/mathworks-ref-arch/container-images/main/matlab-deps/${MATLAB_RELEASE}/ubuntu${UBUNTU_VERSION}/base-dependencies.txt"
+# All supported databricksruntime images are linux/amd64 only, so the amd64 dependency file is used.
+ARG MATLAB_DEPS_URL="https://raw.githubusercontent.com/mathworks-ref-arch/container-images/refs/heads/main/matlab-deps/${MATLAB_RELEASE}/ubuntu${UBUNTU_VERSION}/base-dependencies-amd64.txt"
 ARG MATLAB_DEPENDENCIES="matlab-deps-${MATLAB_RELEASE}-base-dependencies.txt"
 ARG ADDITIONAL_PACKAGES="wget curl unzip ca-certificates xvfb git fluxbox"
 
@@ -104,6 +107,7 @@ ARG MSH_DOWNLOAD_LOCATION=/tmp/Downloads/MathWorks/ServiceHost
 
 RUN wget -q https://www.mathworks.com/mpm/glnxa64/mpm \
     && chmod +x mpm \
+    && if [[ "${MATLAB_RELEASE}" > "R2026a" ]]; then INCLUDE_JRE="0"; fi \
     && ./mpm install \
     --release=${MATLAB_RELEASE}${MATLAB_UPDATE} \
     --destination=${MATLAB_INSTALL_LOCATION} \
@@ -120,7 +124,7 @@ RUN wget -q https://www.mathworks.com/mpm/glnxa64/mpm \
     && ./download_msh.sh --destination ${MSH_DOWNLOAD_LOCATION} \
     && ./install_msh.sh --source ${MSH_DOWNLOAD_LOCATION} --destination ${MSH_MANAGED_INSTALL_ROOT} --no-update-environment \
     && ./cleanup_default_msh_installation_location.sh --for-all-users \
-    && rm ${MATLAB_INSTALL_LOCATION}/sys/os/glnxa64/libstdc++.so.6* \
+    && rm -f ${MATLAB_INSTALL_LOCATION}/sys/os/glnxa64/libstdc++.so.6* \
     && cd / && rm -rf /matlab-install ${MSH_DOWNLOAD_LOCATION}
 
 # Update MATLAB settings
