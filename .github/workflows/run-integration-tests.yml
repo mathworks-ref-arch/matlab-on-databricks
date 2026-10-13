@@ -9,11 +9,11 @@ on:
         type: string
         required: true
       matlab_release:
-        description: "MATLAB Release (e.g., R2026a)"
+        description: "MATLAB Release (e.g., R2026b)"
         type: string
         required: true
       databricks_runtime:
-        description: "Databricks Runtime Version (e.g., 17.3)"
+        description: "Databricks Runtime Version (e.g., 18.3)"
         type: string
         required: true
       matlab_update:
@@ -32,11 +32,11 @@ on:
         type: string
         required: true
       matlab_release:
-        description: "MATLAB Release (e.g., R2026a)"
+        description: "MATLAB Release (e.g., R2026b)"
         type: string
         required: true
       databricks_runtime:
-        description: "Databricks Runtime Version (e.g., 17.3)"
+        description: "Databricks Runtime Version (e.g., 18.3)"
         type: string
         required: true
       matlab_update:

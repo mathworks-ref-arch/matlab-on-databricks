@@ -24,7 +24,7 @@ As an overview, you set up MATLAB using this workflow:
 
 ## Build the Docker Image
 
-First, use the MATLAB [Dockerfile](/resources/dockerfiles/matlab/Dockerfile) in this repository to build an image containing MATLAB and [MATLAB Proxy (GitHub)](https://github.com/mathworks/matlab-proxy). This workflow supports MATLAB R2023b or later (with the exception of R2024b Update 8, which supports compiled MATLAB workflows but does not support running MATLAB interactively. For details, see the GitHub issue [MATLAB R2024b_U8 on MATLAB Proxy](https://github.com/mathworks/matlab-proxy/issues/88)).
+First, use the MATLAB [Dockerfile](/resources/dockerfiles/matlab/Dockerfile) in this repository to build an image containing MATLAB and [MATLAB Proxy (GitHub)](https://github.com/mathworks/matlab-proxy). This workflow supports MATLAB R2023b or later.
 
 1. Clone this repository.
 

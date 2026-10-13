@@ -57,8 +57,8 @@ jobs:
     uses: ./.github/workflows/docker-pipeline.yml
     with:
       image_type: 'matlab'
-      matlab_release: 'R2026a'
-      databricks_runtime: '17.3'
+      matlab_release: 'R2026b'
+      databricks_runtime: '18.3'
       run_integration: true
     secrets: inherit
 
@@ -69,7 +69,7 @@ jobs:
     with:
       image_type: 'runtime'
       matlab_release: 'R2026a'
-      databricks_runtime: '17.3'
+      databricks_runtime: '18.3'
     secrets: inherit
 
   integration_with_latest_release:
@@ -77,7 +77,7 @@ jobs:
     if: ${{ needs.changes.outputs.docker_matlab != 'true' && needs.changes.outputs.mwhelpers == 'true' }}
     uses: ./.github/workflows/run-integration-tests.yml
     with:
-      docker_image: ${{ format('ghcr.io/{0}/matlab:R2026a-17.3', github.repository) }}
-      matlab_release: 'R2026a'
-      databricks_runtime: '17.3'
+      docker_image: ${{ format('ghcr.io/{0}/matlab:R2026b-18.3', github.repository) }}
+      matlab_release: 'R2026b'
+      databricks_runtime: '18.3'
     secrets: inherit

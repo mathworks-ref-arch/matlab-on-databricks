@@ -9,11 +9,11 @@ on:
         type: string
         required: true
       matlab_release:
-        description: "MATLAB Release (e.g., R2026a)"
+        description: "MATLAB Release (e.g., R2026b)"
         type: string
         required: true
       databricks_runtime:
-        description: "Databricks Runtime Version (e.g., 17.3)"
+        description: "Databricks Runtime Version (e.g., 18.3)"
         type: string
         required: true
       matlab_update:
@@ -42,7 +42,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     permissions:
       contents: read
       packages: write
@@ -139,7 +139,7 @@ jobs:
           IMAGE_NAME: ${{ env.IMAGE_TAG }}
           MATLAB_RELEASE: ${{ inputs.matlab_release }}
           MATLAB_UPDATE: ${{ inputs.matlab_update }}
-          DB_RUNTIME: ${{ inputs.databricks_runtime }}
+          DB_RUNTIME: ${{ env.DATABRICKS_RUNTIME_VERSION }}
           MATLAB_LICENSE_FILE: ${{ secrets.MATLAB_LICENSE_FILE }}
 
       - name: Run integration tests
@@ -149,7 +149,7 @@ jobs:
           IMAGE_NAME: ${{ env.IMAGE_TAG }}
           MATLAB_RELEASE: ${{ inputs.matlab_release }}
           MATLAB_UPDATE: ${{ inputs.matlab_update }}
-          DB_RUNTIME: ${{ inputs.databricks_runtime }}
+          DB_RUNTIME: ${{ env.DATABRICKS_RUNTIME_VERSION }}
           MATLAB_LICENSE_FILE: ${{ secrets.MATLAB_LICENSE_FILE }}
 
       - name: Push image to GHCR

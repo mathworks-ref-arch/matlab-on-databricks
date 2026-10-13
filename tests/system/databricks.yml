@@ -8,14 +8,14 @@ workspace:
 
 variables:
   docker_image:
-    description: "Full Docker image URL (e.g., ghcr.io/org/repo/matlab:R2026a-17.3)"
+    description: "Full Docker image URL (e.g., ghcr.io/org/repo/matlab:R2026b-17.3)"
   docker_username:
     description: "Username for Docker image pull authentication"
   docker_password:
     description: "Token/password for Docker image pull authentication"
   matlab_release:
-    description: "MATLAB release (e.g., R2026a)"
-    default: R2026a
+    description: "MATLAB release (e.g., R2026b)"
+    default: R2026b
   databricks_runtime:
     description: "Databricks Runtime version (e.g., 17.3)"
     default: "17.3"
