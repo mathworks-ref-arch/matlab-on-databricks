@@ -69,6 +69,7 @@ result = subprocess_shim.run(
         **os.environ,
         "PYTHONDONTWRITEBYTECODE": "1",
         "MATLAB_ENGINE_NAME": MATLAB_ENGINE_NAME,
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",  # to disable auto loading of 3p plugins from databricks base image
     },
 )
 
