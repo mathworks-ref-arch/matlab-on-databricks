@@ -45,11 +45,11 @@ ARG MATLAB_PRODUCT_LIST="MATLAB Database_Toolbox"
 ARG MATLAB_INSTALL_LOCATION="/opt/matlab/${MATLAB_RELEASE}"
 # Specify license server information using the format: port@hostname
 ARG LICENSE_SERVER
-# Whether to install Java or use built-in. For R2026b and later, Java is not included in the MATLAB installation,
-# so this argument is overridden to 0 for R2026b and later releases.
-ARG INCLUDE_JRE=1
 # Whether or not to include gpu libraries
 ARG INCLUDE_GPU=0
+# Specify the Java that MATLAB uses. Java 17 is installed in all supported Databricks base images and is supported by MATLAB R2024b and later.
+# The Databricks JDBC driver requires Java 11 or later.
+ARG MATLAB_JAVA_HOME=/usr/lib/jvm/zulu17-ca-amd64
 # Specify a custom PyPI index URL (e.g., internal Artifactory) to use for pip installs.
 ARG PIP_INDEX_URL
 # Specify additional Python packages to install via pip. Example: "numpy==2.1.3 pandas>=2.0"
@@ -67,8 +67,8 @@ ARG MATLAB_UPDATE
 ARG MATLAB_INSTALL_LOCATION
 ARG MATLAB_PRODUCT_LIST
 ARG LICENSE_SERVER
-ARG INCLUDE_JRE
 ARG INCLUDE_GPU
+ARG MATLAB_JAVA_HOME
 ARG DATABRICKS_RUNTIME_VERSION
 ARG PIP_INDEX_URL
 ARG ADDITIONAL_PIP_PACKAGES
@@ -104,20 +104,23 @@ ARG MSH_DOWNLOAD_LOCATION=/tmp/Downloads/MathWorks/ServiceHost
 
 ## Install MATLAB & Administered MathWorks Service Host
 # Note: Installation of Support Packages, requires MPM to run as end user.
+# Note: MATLAB is installed without its JRE (--no-jre) and configured to use the Java at MATLAB_JAVA_HOME (matlab_jenv).
+
+# Fail early if the Java for MATLAB is missing from the base image.
+RUN "${MATLAB_JAVA_HOME}/bin/java" -version
 
 RUN wget -q https://www.mathworks.com/mpm/glnxa64/mpm \
     && chmod +x mpm \
-    && if [[ "${MATLAB_RELEASE}" > "R2026a" ]]; then INCLUDE_JRE="0"; fi \
     && ./mpm install \
     --release=${MATLAB_RELEASE}${MATLAB_UPDATE} \
     --destination=${MATLAB_INSTALL_LOCATION} \
     --products ${MATLAB_PRODUCT_LIST} \
-    $(if [ "$INCLUDE_JRE" = "0" ]; then echo "--no-jre"; fi) \
+    --no-jre \
     $(if [ "$INCLUDE_GPU" = "0" ]; then echo "--no-gpu"; fi) \
     || (echo "MPM Installation Failure. See below for more information:" && cat /tmp/mathworks_root.log && false) \
     && mv mpm /usr/local/bin/mpm \
     && rm -rf /tmp/mathworks_root.log \
-    && if [ "$INCLUDE_JRE" = "0" ]; then ${MATLAB_INSTALL_LOCATION}/bin/matlab_jenv -allusers $(dirname $(dirname $(readlink -f $(which java)))); fi \
+    && ${MATLAB_INSTALL_LOCATION}/bin/matlab_jenv -allusers "${MATLAB_JAVA_HOME}" \
     && ln -s ${MATLAB_INSTALL_LOCATION}/bin/matlab /usr/local/bin/matlab \
     && git clone https://github.com/mathworks-ref-arch/administer-mathworks-service-host.git \
     && cd /matlab-install/administer-mathworks-service-host/admin-scripts/linux/admin-controlled-installation \
@@ -169,6 +172,22 @@ RUN ${PYTHON3} -m pip install --no-cache-dir matlab-proxy build ${ADDITIONAL_PIP
 RUN echo "Installing MATLAB Engine for Python..." && \
     env LD_LIBRARY_PATH=${MATLAB_INSTALL_LOCATION}/bin/glnxa64 ${PYTHON3} -m pip install --no-cache-dir ${MATLAB_INSTALL_LOCATION}/extern/engines/python || \
     echo "Failed to install MATLAB Engine for Python... skipping ..."
+
+# Destination for the JDBC driver; MATLAB Interface for Databricks package uses this internally.
+ENV MW_DATABRICKS_JDBC_DRIVER_DIR=/drivers/jdbc
+
+# Refer https://www.databricks.com/spark/jdbc-drivers-archive for available versions.
+# Overriding the driver version is intended for internal testing only.
+ARG DATABRICKS_JDBC_DRIVER_VERSION="3.4.3"
+
+# DATABRICKS_JDBC_DRIVER_URL will not work for legacy Simba drivers. This is acceptable as we do not want customers to use deprecated drivers.
+RUN mkdir -p "${MW_DATABRICKS_JDBC_DRIVER_DIR}" \
+    && DATABRICKS_JDBC_DRIVER_URL="https://databricks-bi-artifacts.s3.us-east-2.amazonaws.com/simbaspark-drivers/jdbc/${DATABRICKS_JDBC_DRIVER_VERSION}/DatabricksJDBC-${DATABRICKS_JDBC_DRIVER_VERSION}.zip" \
+    && FILENAME="/tmp/DB_JDBC_${DATABRICKS_JDBC_DRIVER_VERSION}.zip" \
+    && wget -q "${DATABRICKS_JDBC_DRIVER_URL}" -O "${FILENAME}" \
+    && unzip -jo "${FILENAME}" '*.jar' '*/docs/LICENSE' -d "${MW_DATABRICKS_JDBC_DRIVER_DIR}" \
+    && chmod -R a+rX "${MW_DATABRICKS_JDBC_DRIVER_DIR}" \
+    && rm -f "${FILENAME}"
 
 # Reset PIP settings
 ENV PIP_BREAK_SYSTEM_PACKAGES=

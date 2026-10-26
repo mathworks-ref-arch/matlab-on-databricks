@@ -7,6 +7,7 @@ By default, the [Dockerfile](./Dockerfile) in this folder:
 1. Builds a base image using [Databricksruntime/Standard:17.3-LTS (Docker Hub)](https://hub.docker.com/r/databricksruntime/standard/tags).
 2. Installs MATLAB, MATLAB dependencies, and Database_Toolbox for R2026b.
 3. Installs Python packages for [matlab-proxy](https://github.com/mathworks/matlab-proxy) & [matlabengine](https://github.com/mathworks/matlab-engine-for-python).
+4. Downloads the [Databricks JDBC Driver](https://docs.databricks.com/aws/en/integrations/jdbc/) to `/drivers/jdbc`.
 
 - Docker
 
@@ -58,6 +59,7 @@ The [Dockerfile](../../../resources/dockerfiles/matlab/Dockerfile) supports thes
 | [LICENSE_SERVER](#build-an-image-configured-to-use-a-license-server) | *unset* | Port and hostname of the machine that is running the network license manager, using the `port@hostname` syntax. For example: `27000@MyServerName`. |
 | [PIP_INDEX_URL](#build-an-image-using-a-custom-pypi-index) | *unset* | Custom PyPI index URL for pip installs (e.g., an internal Artifactory). This value is only used during the build and is not stored in the final image. |
 | [ADDITIONAL_PIP_PACKAGES](#build-an-image-with-additional-python-packages) | *unset* | Space-separated list of additional Python packages to install via pip. Supports version specifiers (e.g., `"numpy==2.1.3 pandas>=2.0"`). |
+| MATLAB_JAVA_HOME | /usr/lib/jvm/zulu17-ca-amd64 | Path to the Java installation that MATLAB uses. The default is the Java 17 installation in the Databricks base image. The Databricks JDBC driver requires Java 11 or later. |
 
 Use these arguments with the `docker build` command to customize your image.
 Alternatively, you can change the default values for these arguments directly in the [Dockerfile](https://github.com/mathworks-ref-arch/matlab-on-databricks/blob/main/Dockerfile).
@@ -72,7 +74,7 @@ docker build --build-arg MATLAB_RELEASE=R2024b -t matlab/databricks/desktop:r202
 ```
 
 > [!NOTE]
-> The images for MATLAB R2026b and later do not include the Java® Runtime Environment (JRE) that ships with MATLAB. Instead, MATLAB is configured to use the system Java available in the Databricks base image, which is Java 17 on Databricks Runtime 17.3 LTS.
+> The images do not include the Java® Runtime Environment (JRE) that ships with MATLAB. Instead, MATLAB is configured to use the Java 17 installation available in the Databricks base image. This can differ from the default `java` value specified in the image, which Databricks uses for Spark. To use a custom Java installation, set `MATLAB_JAVA_HOME`. To see which Java versions each MATLAB release supports, see [OpenJDK Compatibility with MATLAB (MathWorks)](https://www.mathworks.com/support/requirements/openjdk.html).
 
 #### Build an Image for a Specific MATLAB Update
 
@@ -133,6 +135,19 @@ docker build --build-arg ADDITIONAL_PIP_PACKAGES="numpy==2.1.3 pandas>=2.0" -t m
 ```
 
 The build fails if any specified package cannot be installed, ensuring the resulting image always contains the packages you requested.
+
+#### Use the Databricks JDBC Driver
+
+The image includes the Databricks OSS JDBC driver, which you can use with Database Toolbox to query data in Databricks. For details, see [Query Data in Databricks from MATLAB Using Database Toolbox](../../../guides/query-data-using-database-toolbox.md). The driver JAR file and its license are downloaded to the `/drivers/jdbc` folder in the image.
+
+The image sets the environment variable `MW_DATABRICKS_JDBC_DRIVER_DIR` to `/drivers/jdbc`. The MATLAB Interface for Databricks package uses this variable to find the JDBC driver. To use a driver stored in a different folder, set `MW_DATABRICKS_JDBC_DRIVER_DIR` to the folder that contains the driver JAR file. You can set the variable in the `spark_env_vars` section of your cluster configuration or cluster policy:
+
+```json
+"spark_env_vars.MW_DATABRICKS_JDBC_DRIVER_DIR": {
+    "type": "fixed",
+    "value": "/Volumes/mycatalog/myschema/myvolume/jdbc"
+  }
+```
 
 ## More MATLAB Docker Resources
 

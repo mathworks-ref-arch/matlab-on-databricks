@@ -9,6 +9,7 @@ import pytest
 LOCAL_TEST_DIR = Path(__file__).parent / "matlab_tests"
 CONTAINER_TEST_DIR = "/opt/matlab_tests"
 CONTAINER_LICENSE_PATH = "/licenses/license.dat"
+MATLAB_JAVA_HOME = "/usr/lib/jvm/zulu17-ca-amd64"
 
 
 @pytest.mark.parametrize(
@@ -57,6 +58,25 @@ class TestLicensedMATLAB:
 
         assert expected == actual, (
             f"Expected MATLAB update {expected} in {result.stdout}"
+        )
+
+    def test_matlab_java_version(self, docker_host):
+        """
+        Verify that MATLAB uses Java 17 from the Databricks base image.
+
+        Calls into Java directly, because MATLAB can start without loading Java
+        until it is first used.
+        """
+        result = helper.run_matlab_code(
+            docker_host,
+            "disp(char(java.lang.System.getProperty('java.version'))); "
+            "disp(char(java.lang.System.getProperty('java.home')))",
+        )
+        assert re.search(r"^17\.", result.stdout, re.MULTILINE), (
+            f"Expected MATLAB to use Java 17, but got {result.stdout}"
+        )
+        assert MATLAB_JAVA_HOME in result.stdout, (
+            f"Expected MATLAB to use Java from {MATLAB_JAVA_HOME}, but got {result.stdout}"
         )
 
     def test_available_products(self, docker_host):

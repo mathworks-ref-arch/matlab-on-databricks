@@ -9,6 +9,7 @@ It includes checks for:
 - MATLAB licensing behavior
 - MATLAB Proxy environment and startup
 - MathWorks Service Host (MSH) behavior
+- Databricks JDBC driver location, license, and permissions
 
 ## Prerequisites
 

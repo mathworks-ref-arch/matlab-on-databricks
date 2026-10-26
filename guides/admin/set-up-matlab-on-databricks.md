@@ -24,7 +24,7 @@ As an overview, you set up MATLAB using this workflow:
 
 ## Build the Docker Image
 
-First, use the MATLAB [Dockerfile](/resources/dockerfiles/matlab/Dockerfile) in this repository to build an image containing MATLAB and [MATLAB Proxy (GitHub)](https://github.com/mathworks/matlab-proxy). This workflow supports MATLAB R2023b or later.
+First, use the MATLAB [Dockerfile](/resources/dockerfiles/matlab/Dockerfile) in this repository to build an image containing MATLAB and [MATLAB Proxy (GitHub)](https://github.com/mathworks/matlab-proxy). This workflow supports MATLAB R2024b or later. MATLAB uses the Java 17 installation available in the Databricks base image. To see which Java versions each MATLAB release supports, see [OpenJDK Compatibility with MATLAB (MathWorks)](https://www.mathworks.com/support/requirements/openjdk.html).
 
 1. Clone this repository.
 
@@ -40,6 +40,8 @@ First, use the MATLAB [Dockerfile](/resources/dockerfiles/matlab/Dockerfile) in 
     - To enable your users to use GPUs or MATLAB's in-built parallel computing, on a single node, you need to install Parallel Computing Toolbox.
 
     - You can specify the address to your network license manager by setting the environment variable `LICENSE_SERVER` in the Dockerfile.
+
+    - The image includes the Databricks JDBC driver, which your users need to query data using Database Toolbox. The build downloads the driver from `databricks-bi-artifacts.s3.us-east-2.amazonaws.com`. If your network restricts outbound access, allow access to this host. For details, see [Use the Databricks JDBC Driver](/resources/dockerfiles/matlab/README.md#use-the-databricks-jdbc-driver).
 
     ```bash
     docker build -t matlab-on-databricks:R2026a -f resources/dockerfiles/matlab/Dockerfile .
