@@ -76,7 +76,7 @@ Otherwise, to install the package you have two options:
 
 - Ask your administrator if they followed the steps to [Download MATLAB Interface for Databricks](./admin/set-up-matlab-on-databricks.md#download-matlab-interface-for-databricks-package). If so, they can provide you the path to the volume where the package is stored. Expand the **MATLAB Interface for Databricks** section in the notebook, insert the path in the **Install Location** field, then click **Install**.
 
-- If your administrator has not downloaded the package for you, you can download it yourself (which requires Internet access). Click **Download**. In the **Install Location** field, you will see the path where the package has been downloaded. Click **Install**.
+- If your administrator has not downloaded the package for you, you can download the latest version yourself from GitHub (which requires Internet access to GitHub). Click **Download**. In the **Install Location** field, you will see the path where the package has been downloaded. Click **Install**.
 
 When you install the package successfully, you see "Installation complete." printed in the log window.
 
