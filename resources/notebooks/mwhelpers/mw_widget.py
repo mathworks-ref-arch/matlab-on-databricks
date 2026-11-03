@@ -564,7 +564,6 @@ def get():
             value=matlab_interface_for_databricks_description_html_content
         )
 
-        __DATABRICKS_SUPPORT_PACKAGE_DOWNLOAD_URL = "https://www.mathworks.com/content/dam/mathworks/mathworks-dot-com/products/reference-architectures/matlab-databricks-latest.zip"
         __MATLAB_INTERFACE_LEARN_MORE_BUTTON_URL = (
             "https://www.mathworks.com/solutions/partners/databricks.html"
         )
@@ -643,12 +642,12 @@ def get():
             ),
         )
         download_status_html = widgets.HTML(
-            value="<span style='color: #616161;'>Click to download from MathWorks</span>"
+            value="<span style='color: #616161;'>Click to download from GitHub</span>"
         )
 
         def _is_download_location_unreachable():
             if diagnostics.check_internet_connection(
-                __DATABRICKS_SUPPORT_PACKAGE_DOWNLOAD_URL, timeout=0.5
+                dsp.DATABRICKS_SUPPORT_PACKAGE_DOWNLOAD_URL, timeout=0.5
             ):
                 # has access to internet, set disabled to False
                 return False
@@ -973,7 +972,7 @@ def get():
             install_databricks_support_package_button.disabled = True
             databricks_support_package_location.disabled = True
             downloaded_location = web.download_file(
-                __DATABRICKS_SUPPORT_PACKAGE_DOWNLOAD_URL,
+                dsp.DATABRICKS_SUPPORT_PACKAGE_DOWNLOAD_URL,
                 status_html=download_status_html,
             )
             if downloaded_location:

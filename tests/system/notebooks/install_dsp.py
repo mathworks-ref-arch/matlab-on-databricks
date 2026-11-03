@@ -19,15 +19,15 @@ from mwhelpers import dsp, web
 
 USERNAME = os.environ["MW_TEST_USERNAME"]
 
-DSP_DOWNLOAD_URL = "https://www.mathworks.com/content/dam/mathworks/mathworks-dot-com/products/reference-architectures/matlab-databricks-latest.zip"
-
 # COMMAND ----------
 
-# Download DSP zip from MathWorks
+# Download DSP zip from the latest GitHub release
 zip_path = web.download_file(
-    DSP_DOWNLOAD_URL, save_path="/tmp/matlab-databricks-latest.zip"
+    dsp.DATABRICKS_SUPPORT_PACKAGE_DOWNLOAD_URL, save_path="/tmp/matlab-databricks.zip"
 )
-assert zip_path, f"Failed to download DSP from {DSP_DOWNLOAD_URL}"
+assert zip_path, (
+    f"Failed to download DSP from {dsp.DATABRICKS_SUPPORT_PACKAGE_DOWNLOAD_URL}"
+)
 print(f"DSP zip downloaded to: {zip_path}")
 
 # COMMAND ----------

@@ -15,6 +15,9 @@ from pathlib import Path
 
 from . import user
 
+# GitHub's shortcut to latest released artifact from https://github.com/mathworks/MATLAB-Interface-for-Databricks
+DATABRICKS_SUPPORT_PACKAGE_DOWNLOAD_URL = "https://github.com/mathworks/MATLAB-Interface-for-Databricks/releases/latest/download/matlab-databricks.zip"
+
 
 def get_mwi_unzip_location(username: str) -> Path:
     """Return the directory where the DSP is extracted on the cluster.
