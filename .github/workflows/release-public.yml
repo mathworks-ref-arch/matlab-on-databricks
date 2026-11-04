@@ -26,10 +26,14 @@ jobs:
       matrix:
         matlab_release: ['R2024b', 'R2025a', 'R2025b', 'R2026a', 'R2026b']
         databricks_runtime: ['16.4', '17.3', '18.3']
+        include:
+          - matlab_release: 'R2026b'
+            matlab_update: 'U0'
     uses: ./.github/workflows/docker-pipeline.yml
     with:
       image_type: 'matlab'
       matlab_release: ${{ matrix.matlab_release }}
+      matlab_update: ${{ matrix.matlab_update }}
       databricks_runtime: ${{ matrix.databricks_runtime }}
       run_integration: true
       promote: true
