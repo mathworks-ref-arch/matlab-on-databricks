@@ -58,6 +58,7 @@ jobs:
     with:
       image_type: 'matlab'
       matlab_release: 'R2026b'
+      matlab_update: 'U0'
       databricks_runtime: '18.3'
       run_integration: true
     secrets: inherit

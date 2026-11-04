@@ -5,7 +5,7 @@ on:
   workflow_call:
     inputs:
       docker_image:
-        description: "Full Docker image URL accessible from Databricks (e.g., ghcr.io/org/repo/matlab:R2026b-17.3)"
+        description: "Full Docker image URL accessible from Databricks (e.g., ghcr.io/org/repo/matlab:R2026b-18.3)"
         type: string
         required: true
       matlab_release:
@@ -13,7 +13,7 @@ on:
         type: string
         required: true
       databricks_runtime:
-        description: "Databricks Runtime Version (e.g., 17.3)"
+        description: "Databricks Runtime Version (e.g., 18.3)"
         type: string
         required: true
     secrets:
@@ -29,7 +29,7 @@ on:
   workflow_dispatch:
     inputs:
       docker_image:
-        description: "Full Docker image URL accessible from Databricks (e.g., ghcr.io/org/repo/matlab:R2026b-17.3)"
+        description: "Full Docker image URL accessible from Databricks (e.g., ghcr.io/org/repo/matlab:R2026b-18.3)"
         type: string
         required: true
       matlab_release:
@@ -38,9 +38,9 @@ on:
         default: 'R2026b'
         required: true
       databricks_runtime:
-        description: "Databricks Runtime Version (e.g., 17.3)"
+        description: "Databricks Runtime Version (e.g., 18.3)"
         type: string
-        default: '17.3'
+        default: '18.3'
         required: true
 
 permissions:

@@ -37,7 +37,7 @@ Provide the following values via environment variables:
 | `DATABRICKS_HOST` | Databricks workspace URL |
 | `DATABRICKS_CLIENT_ID` | Service principal client ID |
 | `DATABRICKS_CLIENT_SECRET` | Service principal OAuth secret |
-| `BUNDLE_VAR_docker_image` | Full Docker image URL (e.g., `ghcr.io/org/repo/matlab:R2026b-17.3`) |
+| `BUNDLE_VAR_docker_image` | Full Docker image URL (e.g., `ghcr.io/org/repo/matlab:R2026b-18.3`) |
 | `BUNDLE_VAR_docker_username` | Username for image pull authentication (e.g., `github.actor`) |
 | `BUNDLE_VAR_docker_password` | Token for image pull authentication (e.g., `GITHUB_TOKEN`) |
 
@@ -46,7 +46,8 @@ Optional:
 | Environment Variable | Description |
 | :--- | :--- |
 | `BUNDLE_VAR_matlab_release` | MATLAB release (defaults to `R2026b`) |
-| `BUNDLE_VAR_databricks_runtime` | Databricks Runtime version (defaults to `17.3`) |
+| `BUNDLE_VAR_databricks_runtime` | Databricks Runtime version (defaults to `18.3`) |
+| `BUNDLE_VAR_spark_version` | Cluster `spark_version` (derived from `BUNDLE_VAR_databricks_runtime`; e.g., `18.x-scala2.13` for 18.3, `17.3.x-scala2.13` for 17.3) |
 | `BUNDLE_VAR_node_type_id` | Cloud-specific node type (defaults to `Standard_DS3_v2`) |
 | `BUNDLE_VAR_run_id` | Unique identifier for the deployment (e.g., CI run ID) |
 | `MATLAB_LICENSE` | MATLAB license file content (for `upload-license` target) |

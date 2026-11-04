@@ -8,13 +8,14 @@
 # The Databricks CLI automatically maps these to bundle variables.
 #
 # Required:
-#   BUNDLE_VAR_docker_image       - full image URL (e.g., ghcr.io/org/repo/matlab:R2026b-17.3)
+#   BUNDLE_VAR_docker_image       - full image URL (e.g., ghcr.io/org/repo/matlab:R2026b-18.3)
 #   BUNDLE_VAR_docker_username    - username for pull authentication (e.g., github.actor)
 #   BUNDLE_VAR_docker_password    - token for pull authentication (e.g., GITHUB_TOKEN)
 #
 # Optional:
 #   BUNDLE_VAR_matlab_release     - defaults to R2026b (in databricks.yml)
-#   BUNDLE_VAR_databricks_runtime - defaults to 17.3 (in databricks.yml)
+#   BUNDLE_VAR_databricks_runtime - defaults to 18.3 (in databricks.yml)
+#   BUNDLE_VAR_spark_version      - derived from BUNDLE_VAR_databricks_runtime when unset
 #   BUNDLE_VAR_node_type_id       - defaults to Standard_DS3_v2 for Azure (in databricks.yml)
 #   BUNDLE_VAR_run_id             - unique identifier for this deployment (e.g., CI run ID)
 #   MATLAB_LICENSE                - MATLAB license file content (for upload-license target)
@@ -33,6 +34,13 @@
 SHELL := /bin/bash
 
 REPO_ROOT := $(shell cd ../.. && pwd)
+
+# DBR 18+ uses the unified spark_version format (18.3 -> 18.x-scala2.13);
+# earlier releases keep the minor version (17.3 -> 17.3.x-scala2.13).
+ifdef BUNDLE_VAR_databricks_runtime
+DBR := $(BUNDLE_VAR_databricks_runtime)
+export BUNDLE_VAR_spark_version ?= $(if $(filter 16.% 17.%,$(DBR)),$(DBR),$(basename $(DBR))).x-scala2.13
+endif
 
 # --- Full pipeline ---
 
