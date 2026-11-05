@@ -69,7 +69,7 @@ class TestContainer:
         """
         Verifies the DDUX environment variable.
         """
-        expected_value = "MATLAB_PROXY:DATABRICKS:V1"
+        expected_value = "MATLAB:DATABRICKS:V1"
         actual_value = docker_host.environment().get("MW_CONTEXT_TAGS", "")
         assert actual_value == expected_value, (
             f"Expected MW_CONTEXT_TAGS={expected_value}, but got {actual_value}"

@@ -102,6 +102,9 @@ WORKDIR /matlab-install
 ARG MSH_MANAGED_INSTALL_ROOT=/usr/local/MathWorks/ServiceHost/
 ARG MSH_DOWNLOAD_LOCATION=/tmp/Downloads/MathWorks/ServiceHost
 
+# Context tags identifying this reference architecture, used by mpm and matlab-proxy.
+ENV MW_CONTEXT_TAGS=MATLAB:DATABRICKS:V1
+
 ## Install MATLAB & Administered MathWorks Service Host
 # Note: Installation of Support Packages, requires MPM to run as end user.
 # Note: MATLAB is installed without its JRE (--no-jre) and configured to use the Java at MATLAB_JAVA_HOME (matlab_jenv).
@@ -112,6 +115,7 @@ RUN "${MATLAB_JAVA_HOME}/bin/java" -version
 RUN wget -q https://www.mathworks.com/mpm/glnxa64/mpm \
     && chmod +x mpm \
     && ./mpm install \
+    --caller="${MW_CONTEXT_TAGS}" \
     --release=${MATLAB_RELEASE}${MATLAB_UPDATE} \
     --destination=${MATLAB_INSTALL_LOCATION} \
     --products ${MATLAB_PRODUCT_LIST} \
@@ -149,7 +153,6 @@ ENV MATHWORKS_SERVICE_HOST_IN_LSF=1
 # Install matlab-proxy as root user for all users of the container
 ########################################################################
 ## MATLAB Proxy Configuration
-ENV MW_CONTEXT_TAGS=MATLAB_PROXY:DATABRICKS:V1
 ENV MWI_USE_COOKIE_CACHE=True
 ENV MWI_APP_PORT=8888
 ENV MWI_BASE_URL="/matlab"
