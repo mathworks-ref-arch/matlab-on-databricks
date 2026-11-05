@@ -31,6 +31,7 @@ _MIN_REGULAR_UID = 1000
 # or because it had to be replaced by a hash entirely ("u_18a68f29").
 _USERNAME_PREFIX = "u_"
 
+
 ################################################
 ## Start Private functions ##
 ################################################
@@ -80,6 +81,7 @@ def _call_CreateUser_script(username: str) -> str:
     script_path = Path(__file__).parent / "scripts" / "CreateUser.sh"
     result = subprocess.run(
         [str(script_path), "-u", username],
+        check=False,
         capture_output=True,
         text=True,
     )

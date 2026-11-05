@@ -949,7 +949,6 @@ def get():
         # to prevent cluster from shutting down while user is interacting with the app.
         if DATABRICKS_CLUSTER_AUTO_TERMINATION_MINUTES:
             dbx.start_cluster_keep_alive(
-                username=get_username(),
                 check_interval_minutes=DATABRICKS_CLUSTER_AUTO_TERMINATION_MINUTES // 3,
             )
 

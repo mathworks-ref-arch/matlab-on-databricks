@@ -118,7 +118,7 @@ class TestListServersWithIdleTimeout:
             "resources.notebooks.mwhelpers.web.send_http_request",
             return_value=mock_response,
         )
-        result = matlab_proxy.list_servers_with_idle_timeout(username="testuser")
+        result = matlab_proxy._list_servers_with_idle_timeout(username="testuser")
         assert result == [
             "http://localhost:3000/matlab",
             "http://localhost:3100/matlab",
@@ -129,7 +129,7 @@ class TestListServersWithIdleTimeout:
             "resources.notebooks.mwhelpers.matlab_proxy._list_servers",
             return_value={},
         )
-        assert matlab_proxy.list_servers_with_idle_timeout(username="testuser") == []
+        assert matlab_proxy._list_servers_with_idle_timeout(username="testuser") == []
 
     def test_excludes_servers_without_idle_timeout(self, mocker):
         servers = {"3000": "http://localhost:3000/matlab"}
@@ -144,7 +144,7 @@ class TestListServersWithIdleTimeout:
             "resources.notebooks.mwhelpers.web.send_http_request",
             return_value=mock_response,
         )
-        assert matlab_proxy.list_servers_with_idle_timeout(username="testuser") == []
+        assert matlab_proxy._list_servers_with_idle_timeout(username="testuser") == []
 
     def test_excludes_servers_with_failed_request(self, mocker):
         servers = {"3000": "http://localhost:3000/matlab"}
@@ -156,7 +156,57 @@ class TestListServersWithIdleTimeout:
             "resources.notebooks.mwhelpers.web.send_http_request",
             return_value=None,
         )
-        assert matlab_proxy.list_servers_with_idle_timeout(username="testuser") == []
+        assert matlab_proxy._list_servers_with_idle_timeout(username="testuser") == []
+
+
+class TestListServersWithIdleTimeoutByUser:
+    def test_lists_servers_of_every_matlab_user(self, mocker):
+        servers_by_user = {"alice": ["http://0.0.0.0:3000/matlab"], "bob": []}
+        mocker.patch(
+            "resources.notebooks.mwhelpers.group.mwi_users_group_members",
+            return_value=list(servers_by_user),
+        )
+        mock_list = mocker.patch(
+            "resources.notebooks.mwhelpers.matlab_proxy._list_servers_with_idle_timeout",
+            side_effect=lambda username: servers_by_user[username],
+        )
+
+        result = matlab_proxy.list_servers_with_idle_timeout_by_user(mocker.Mock())
+
+        assert result == servers_by_user
+        assert mock_list.call_count == 2
+
+    def test_returns_empty_dict_when_there_are_no_matlab_users(self, mocker):
+        mocker.patch(
+            "resources.notebooks.mwhelpers.group.mwi_users_group_members",
+            return_value=[],
+        )
+
+        assert matlab_proxy.list_servers_with_idle_timeout_by_user(mocker.Mock()) == {}
+
+    def test_failure_for_one_user_does_not_hide_others(self, mocker):
+        mocker.patch(
+            "resources.notebooks.mwhelpers.group.mwi_users_group_members",
+            return_value=["alice", "bob"],
+        )
+
+        def list_servers(username):
+            if username == "alice":
+                raise RuntimeError("boom")
+            return ["http://0.0.0.0:3100/matlab"]
+
+        mocker.patch(
+            "resources.notebooks.mwhelpers.matlab_proxy._list_servers_with_idle_timeout",
+            side_effect=list_servers,
+        )
+        mock_logger = mocker.Mock()
+
+        result = matlab_proxy.list_servers_with_idle_timeout_by_user(mock_logger)
+
+        assert result == {"bob": ["http://0.0.0.0:3100/matlab"]}
+        mock_logger.exception.assert_called_once_with(
+            "Error listing MATLAB sessions for user alice"
+        )
 
 
 class TestPrepareStartupScript:
@@ -206,6 +256,13 @@ class TestPrepareStartupScript:
 
 
 class TestStartSession:
+    @pytest.fixture(autouse=True)
+    def mock_add_user_to_group(self, mocker):
+        """Never change the groups of the machine running the tests."""
+        return mocker.patch(
+            "resources.notebooks.mwhelpers.group.add_user_to_mwi_users_group"
+        )
+
     def test_returns_empty_string_when_username_is_none(self):
         assert matlab_proxy.start(username=None) == ""  # type: ignore
         assert matlab_proxy.start(username="") == ""
@@ -257,6 +314,28 @@ class TestStartSession:
 
         assert matlab_proxy.start(username="testuser") == "3000"
         mock_create_user.assert_called_once_with("testuser")
+
+    def test_adds_existing_user_to_mwi_users_group(
+        self, mocker, mock_add_user_to_group
+    ):
+        mocker.patch(
+            "resources.notebooks.mwhelpers.user._get_passwd_entry_for_user",
+            return_value="/home/testuser",
+        )
+        mocker.patch("resources.notebooks.mwhelpers.user.uid", return_value=1001)
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.find_next_open_port", return_value=3000
+        )
+        mocker.patch("resources.notebooks.mwhelpers.subprocess_shim.spawn")
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dsp.required_env_vars",
+            return_value={},
+        )
+        mock_create_user = mocker.patch("resources.notebooks.mwhelpers.user.create")
+
+        assert matlab_proxy.start(username="testuser") == "3000"
+        mock_create_user.assert_not_called()
+        mock_add_user_to_group.assert_called_once_with("testuser")
 
     def test_raises_when_home_folder_creation_fails(self, mocker):
         mocker.patch(

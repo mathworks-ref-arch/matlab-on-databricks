@@ -4,6 +4,7 @@ import logging
 
 import pytest
 from conftest import (
+    TEST_API_TOKEN,
     TEST_BROWSER_HOSTNAME,
     TEST_CLUSTER_ID,
     TEST_CLUSTER_NAME,
@@ -199,41 +200,152 @@ class TestGetKeepAliveLogger:
 
     def test_logging_disabled_by_default(self, monkeypatch):
         monkeypatch.delenv("MWI_ENABLE_MATLAB_KEEP_ALIVE_LOGGING", raising=False)
-        logger = dbx._get_keep_alive_logger()
+        logger = dbx._get_keep_alive_logger(TEST_CLUSTER_ID)
         assert logger.disabled is True
         assert len(logger.handlers) == 0
 
     def test_logging_enabled_when_env_var_true(self, monkeypatch, mocker):
         monkeypatch.setenv("MWI_ENABLE_MATLAB_KEEP_ALIVE_LOGGING", "true")
         mocker.patch("resources.notebooks.mwhelpers.dbx.Path.mkdir")
-        mocker.patch("logging.FileHandler", return_value=logging.NullHandler())
-        logger = dbx._get_keep_alive_logger()
+        mock_file_handler = mocker.patch(
+            "logging.FileHandler", return_value=logging.NullHandler()
+        )
+        logger = dbx._get_keep_alive_logger(TEST_CLUSTER_ID)
         assert logger.disabled is False
         assert len(logger.handlers) == 1
+        log_file = mock_file_handler.call_args.args[0]
+        assert log_file.parent.name == "keep_alive_logs"
+        assert log_file.name == f"keep_alive_{TEST_CLUSTER_ID}.log"
 
     def test_logging_disabled_when_env_var_false(self, monkeypatch):
         monkeypatch.setenv("MWI_ENABLE_MATLAB_KEEP_ALIVE_LOGGING", "false")
-        logger = dbx._get_keep_alive_logger()
+        logger = dbx._get_keep_alive_logger(TEST_CLUSTER_ID)
         assert logger.disabled is True
         assert len(logger.handlers) == 0
 
 
-class TestStartClusterKeepAlive:
-    def test_returns_none_when_username_is_empty(self):
-        assert dbx.start_cluster_keep_alive(username="") is None
-        assert dbx.start_cluster_keep_alive(username=None) is None
+class TestActiveSessions:
+    def test_lists_user_and_port_of_every_session(self):
+        servers_by_user = {
+            "alice": ["http://0.0.0.0:3000/matlab", "http://0.0.0.0:3001/matlab"],
+            "bob": [],
+            "carol": ["http://0.0.0.0:3002/matlab"],
+        }
 
+        assert (
+            dbx._active_sessions(servers_by_user)
+            == "alice:3000, alice:3001, carol:3002"
+        )
+
+    def test_returns_empty_string_without_sessions(self):
+        assert dbx._active_sessions({"alice": [], "bob": []}) == ""
+
+
+@pytest.fixture
+def mock_servers_by_user(mocker):
+    """Mock the servers with idle timeout of every MATLAB user."""
+
+    def _mock(servers_by_user: dict):
+        return mocker.patch(
+            "resources.notebooks.mwhelpers.matlab_proxy.list_servers_with_idle_timeout_by_user",
+            return_value=servers_by_user,
+        )
+
+    return _mock
+
+
+class TestKeepAliveTick:
+    def test_sends_keep_alive_when_any_user_has_a_session(
+        self, mocker, mock_servers_by_user
+    ):
+        mock_servers_by_user({"alice": [], "bob": ["http://0.0.0.0:3000/matlab"]})
+        mock_run = mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.run_keep_alive_command"
+        )
+        mock_client = mocker.Mock()
+        mock_logger = mocker.Mock()
+
+        dbx._keep_alive_tick(TEST_CLUSTER_ID, mock_client, mock_logger)
+
+        mock_run.assert_called_once_with(
+            TEST_CLUSTER_ID,
+            workspace_client=mock_client,
+            active_sessions="bob:3000",
+        )
+        mock_logger.info.assert_called_once_with(
+            "Active MATLAB session(s) (alice: []; bob: ['http://0.0.0.0:3000/matlab']), "
+            "sending keep-alive"
+        )
+
+    def test_skips_keep_alive_when_no_user_has_a_session(
+        self, mocker, mock_servers_by_user
+    ):
+        mock_servers_by_user({"alice": [], "bob": []})
+        mock_run = mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.run_keep_alive_command"
+        )
+        mock_logger = mocker.Mock()
+
+        dbx._keep_alive_tick(TEST_CLUSTER_ID, mocker.Mock(), mock_logger)
+
+        mock_run.assert_not_called()
+        mock_logger.info.assert_called_once_with(
+            "No active MATLAB sessions with idle timeout (alice: []; bob: []), "
+            "skipping keep-alive"
+        )
+
+    def test_skips_keep_alive_when_there_are_no_matlab_users(
+        self, mocker, mock_servers_by_user
+    ):
+        mock_servers_by_user({})
+        mock_run = mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.run_keep_alive_command"
+        )
+        mock_logger = mocker.Mock()
+
+        dbx._keep_alive_tick(TEST_CLUSTER_ID, mocker.Mock(), mock_logger)
+
+        mock_run.assert_not_called()
+        mock_logger.info.assert_called_once_with(
+            "No active MATLAB sessions with idle timeout (no MATLAB users), "
+            "skipping keep-alive"
+        )
+
+
+class TestLogKeepAliveStart:
+    def test_logs_cluster_name_id_and_interval(self, mocker):
+        mock_client = mocker.Mock()
+        mock_client.clusters.get.return_value.cluster_name = "my-cluster"
+        mock_logger = mocker.Mock()
+
+        dbx._log_keep_alive_start(TEST_CLUSTER_ID, mock_client, mock_logger, 3)
+
+        mock_client.clusters.get.assert_called_once_with(TEST_CLUSTER_ID)
+        mock_logger.info.assert_called_once_with(
+            f"Keep-alive started (cluster my-cluster, ID {TEST_CLUSTER_ID}, "
+            "check interval 3 min)"
+        )
+
+    def test_logs_unknown_name_when_lookup_fails(self, mocker):
+        mock_client = mocker.Mock()
+        mock_client.clusters.get.side_effect = RuntimeError("API unavailable")
+        mock_logger = mocker.Mock()
+
+        dbx._log_keep_alive_start(TEST_CLUSTER_ID, mock_client, mock_logger, 3)
+
+        mock_logger.info.assert_called_once_with(
+            f"Keep-alive started (cluster unknown, ID {TEST_CLUSTER_ID}, "
+            "check interval 3 min)"
+        )
+
+
+class TestStartClusterKeepAlive:
     def test_starts_daemon_thread(self, mocker, mock_databricks_context):
         mocker.patch(
             "resources.notebooks.mwhelpers.dbx._get_keep_alive_logger",
         )
-        mocker.patch(
-            "resources.notebooks.mwhelpers.matlab_proxy.list_servers_with_idle_timeout",
-            return_value=[],
-        )
-        thread = dbx.start_cluster_keep_alive(
-            username="testuser", check_interval_minutes=1
-        )
+        mocker.patch("resources.notebooks.mwhelpers.dbx._log_keep_alive_start")
+        thread = dbx.start_cluster_keep_alive(check_interval_minutes=1)
         assert thread is not None
         assert thread.is_alive()
         assert thread.daemon is True
@@ -245,17 +357,58 @@ class TestStartClusterKeepAlive:
         mocker.patch(
             "resources.notebooks.mwhelpers.dbx._get_keep_alive_logger",
         )
-        mocker.patch(
-            "resources.notebooks.mwhelpers.matlab_proxy.list_servers_with_idle_timeout",
-            return_value=[],
-        )
-        thread1 = dbx.start_cluster_keep_alive(
-            username="testuser", check_interval_minutes=1
-        )
-        thread2 = dbx.start_cluster_keep_alive(
-            username="testuser", check_interval_minutes=1
-        )
+        mocker.patch("resources.notebooks.mwhelpers.dbx._log_keep_alive_start")
+        thread1 = dbx.start_cluster_keep_alive(check_interval_minutes=1)
+        thread2 = dbx.start_cluster_keep_alive(check_interval_minutes=1)
         assert thread1 is thread2
+
+    def test_loop_uses_explicitly_authenticated_client(
+        self, mocker, mock_databricks_context
+    ):
+        """The loop outlives the REPL context, so it must not rely on default auth."""
+
+        class StopLoop(BaseException):
+            pass
+
+        mock_get_logger = mocker.patch(
+            "resources.notebooks.mwhelpers.dbx._get_keep_alive_logger"
+        )
+        mock_log_start = mocker.patch(
+            "resources.notebooks.mwhelpers.dbx._log_keep_alive_start"
+        )
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.threading.enumerate", return_value=[]
+        )
+        mock_thread_class = mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.threading.Thread"
+        )
+        mock_client_class = mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.WorkspaceClient"
+        )
+        mock_tick = mocker.patch("resources.notebooks.mwhelpers.dbx._keep_alive_tick")
+        mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.time.sleep", side_effect=StopLoop
+        )
+
+        dbx.start_cluster_keep_alive(check_interval_minutes=1)
+
+        mock_client_class.assert_called_once_with(
+            host=TEST_BROWSER_HOSTNAME, token=TEST_API_TOKEN
+        )
+        # Run one iteration of the loop on this thread.
+        keep_alive_loop = mock_thread_class.call_args.kwargs["target"]
+        with pytest.raises(StopLoop):
+            keep_alive_loop()
+        mock_get_logger.assert_called_once_with(TEST_CLUSTER_ID)
+        mock_log_start.assert_called_once_with(
+            TEST_CLUSTER_ID,
+            mock_client_class.return_value,
+            mock_get_logger.return_value,
+            1,
+        )
+        mock_tick.assert_called_once_with(
+            TEST_CLUSTER_ID, mock_client_class.return_value, mocker.ANY
+        )
 
 
 class TestRunKeepAliveCommand:
@@ -266,13 +419,13 @@ class TestRunKeepAliveCommand:
     def test_successful_execution_logs_info(self, mocker):
         """Test that successful execution logs info message."""
         mock_logger = mocker.Mock()
-        mocker.patch(
+        mock_get_logger = mocker.patch(
             "resources.notebooks.mwhelpers.dbx._get_keep_alive_logger",
             return_value=mock_logger,
         )
 
         mock_execution_context = mocker.MagicMock()
-        mock_execution_context.run_command.return_value = "SUCCESS"
+        mock_execution_context.run_print_command.return_value = "SUCCESS"
         mock_execution_context_class = mocker.patch(
             "resources.notebooks.mwhelpers.dbx.DatabricksExecutionContext"
         )
@@ -282,17 +435,50 @@ class TestRunKeepAliveCommand:
 
         cluster_id = "test-cluster-123"
 
-        dbx.run_keep_alive_command(cluster_id=cluster_id)
+        dbx.run_keep_alive_command(cluster_id=cluster_id, active_sessions="alice:3000")
 
-        mock_execution_context_class.assert_called_once_with(cluster_id=cluster_id)
-        mock_execution_context.run_command.assert_called_once()
+        mock_execution_context_class.assert_called_once_with(
+            cluster_id=cluster_id, workspace_client=None
+        )
+        mock_execution_context.run_print_command.assert_called_once_with(
+            message="MATLAB sessions: alice:3000"
+        )
+        mock_get_logger.assert_called_once_with(cluster_id)
         mock_logger.info.assert_called_once_with(
-            "Cluster kept alive: command status: SUCCESS"
+            "Command status: SUCCESS (sessions: alice:3000)"
         )
         mock_logger.error.assert_not_called()
 
-    def test_run_command_exception_logs_error(self, mocker):
-        """Test that exceptions from run_command are logged as errors."""
+    def test_passes_workspace_client_to_execution_context(self, mocker):
+        mocker.patch("resources.notebooks.mwhelpers.dbx._get_keep_alive_logger")
+        mock_execution_context_class = mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.DatabricksExecutionContext"
+        )
+        mock_client = mocker.Mock()
+
+        dbx.run_keep_alive_command(
+            cluster_id=TEST_CLUSTER_ID, workspace_client=mock_client
+        )
+
+        mock_execution_context_class.assert_called_once_with(
+            cluster_id=TEST_CLUSTER_ID, workspace_client=mock_client
+        )
+
+    def test_execution_context_uses_supplied_workspace_client(self, mocker):
+        mock_client_class = mocker.patch(
+            "resources.notebooks.mwhelpers.dbx.WorkspaceClient"
+        )
+        mock_client = mocker.Mock()
+
+        context = dbx.DatabricksExecutionContext(
+            cluster_id=TEST_CLUSTER_ID, workspace_client=mock_client
+        )
+
+        assert context.workspace_client is mock_client
+        mock_client_class.assert_not_called()
+
+    def test_run_print_command_exception_logs_error(self, mocker):
+        """Test that exceptions from run_print_command are logged as errors."""
         mock_logger = mocker.Mock()
         mocker.patch(
             "resources.notebooks.mwhelpers.dbx._get_keep_alive_logger",
@@ -301,7 +487,7 @@ class TestRunKeepAliveCommand:
 
         mock_context = mocker.MagicMock()
         test_exception = RuntimeError("Command execution failed")
-        mock_context.run_command.side_effect = test_exception
+        mock_context.run_print_command.side_effect = test_exception
         mock_context_class = mocker.patch(
             "resources.notebooks.mwhelpers.dbx.DatabricksExecutionContext"
         )

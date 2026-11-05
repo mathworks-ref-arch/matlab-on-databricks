@@ -1,11 +1,12 @@
 # Copyright 2026 The MathWorks, Inc.
 
+import logging
 import os
 import threading
 from typing import Optional
 from urllib.parse import urlparse, urlunparse
 
-from . import dbx, dsp, subprocess_shim, user, web
+from . import dbx, dsp, group, subprocess_shim, user, web
 
 
 def version(username: str) -> Optional[str]:
@@ -67,7 +68,7 @@ def list_servers_ports(username: str) -> list[str]:
     return list(_list_servers(username).keys())
 
 
-def list_servers_with_idle_timeout(username: str) -> list[str]:
+def _list_servers_with_idle_timeout(username: str) -> list[str]:
     """List running matlab-proxy servers for the user that have idle timeout configured."""
 
     servers = _list_servers(username=username)
@@ -81,6 +82,26 @@ def list_servers_with_idle_timeout(username: str) -> list[str]:
                 if config.get("idleTimeoutDuration"):
                     servers_with_timeout.append(server_url)
     return servers_with_timeout
+
+
+def list_servers_with_idle_timeout_by_user(
+    logger: logging.Logger,
+) -> dict[str, list[str]]:
+    """List the matlab-proxy servers with idle timeout of every MATLAB user on the cluster.
+
+    Users and their servers are both read from the system rather than tracked in
+    memory, so this reflects the latest system state.
+    """
+    servers_by_user = {}
+    for username in group.mwi_users_group_members():
+        # A failure for one user must not stop the cluster being kept alive for others.
+        try:
+            servers_by_user[username] = _list_servers_with_idle_timeout(
+                username=username
+            )
+        except Exception:
+            logger.exception(f"Error listing MATLAB sessions for user {username}")
+    return servers_by_user
 
 
 def _prepare_mwi_matlab_startup_script(
@@ -141,6 +162,9 @@ def start(
 
     home_folder = user.home_folder(username, create_if_not_exists=True)
     uid = user.uid(username)
+    # Users that already exist skip creation, so add them to the group on every
+    # start to make sure the cluster keep-alive sees all MATLAB sessions.
+    group.add_user_to_mwi_users_group(username)
 
     port = dbx.find_next_open_port()
     if port is None:
@@ -177,7 +201,10 @@ def start(
         try:
             threading.Thread(
                 target=dbx.run_keep_alive_command,
-                kwargs={"cluster_id": dbx_context.clusterId},
+                kwargs={
+                    "cluster_id": dbx_context.clusterId,
+                    "active_sessions": f"{username}:{port}",
+                },
             ).start()
         except Exception as e:
             print(

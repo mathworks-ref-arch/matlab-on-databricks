@@ -128,6 +128,19 @@ class TestCreate:
             user.create("")
 
 
+class TestCallCreateUserScript:
+    def test_passes_username_to_script(self, mocker):
+        mock_run = mocker.patch(
+            "resources.notebooks.mwhelpers.user.subprocess.run",
+            return_value=mocker.Mock(returncode=0, stdout="UID: 1001\n"),
+        )
+
+        user._call_CreateUser_script("newuser")
+
+        command = mock_run.call_args.args[0]
+        assert command[1:] == ["-u", "newuser"]
+
+
 class TestGetPasswdEntry:
     def test_returns_full_entry_when_field_index_zero(self, mocker):
         passwd_line = "testuser:x:1001:1001::/home/testuser:/bin/bash"

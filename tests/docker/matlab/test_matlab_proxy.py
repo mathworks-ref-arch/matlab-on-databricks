@@ -43,9 +43,11 @@ class TestMATLABProxyIntegration:
         """
         try:
             helper.wait_for(
-                lambda: docker_host.socket(
-                    f"tcp://0.0.0.0:{DEFAULT_MWI_APP_PORT}"
-                ).is_listening,
+                lambda: (
+                    docker_host.socket(
+                        f"tcp://0.0.0.0:{DEFAULT_MWI_APP_PORT}"
+                    ).is_listening
+                ),
                 timeout=30,
                 description=f"port {DEFAULT_MWI_APP_PORT} listening",
             )
