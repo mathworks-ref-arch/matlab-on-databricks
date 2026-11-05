@@ -32,7 +32,7 @@ on:
       matlab_update:
         description: "MATLAB Update (e.g., U4). Empty = latest update for MATLAB, base release for Runtime."
         type: string
-        default: 'U0'
+        default: ''
         required: false
       docker_image:
         description: "Full MATLAB Docker image tag, required for test mode"

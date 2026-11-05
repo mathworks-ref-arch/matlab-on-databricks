@@ -13,7 +13,7 @@ MSH_INSTALL_ROOT = "/usr/local/MathWorks/ServiceHost/"
 
 @pytest.mark.parametrize(
     "docker_host",
-    [{"licensed": True, "command": "matlab", "wait_for": "MATLAB"}],
+    [{"licensed": True, "command": "matlab", "stdin_open": True, "wait_for": "MATLAB"}],
     indirect=True,
 )
 class TestMSHIntegration:
