@@ -20,6 +20,7 @@ The CI/CD setup is split into lightweight orchestration workflows and reusable w
 | **`docker-pipeline.yml`** | Reusable single-job workflow that builds a Docker image, runs docker and integration tests, and optionally pushes the tested image to GHCR. |
 | **`run-system-tests.yml`** | Reusable system-test workflow that deploys a DAB bundle to Databricks against an already-pushed GHCR image and tears down resources. |
 | **`release-public.yml`** | Release workflow triggered by version tags, weekly schedule, or manual dispatch. Runs full image matrix build, test, and push, then system tests for the oldest and latest releases. |
+| **`release-assets.yml`** | Triggered when a release is published in the public repo. Attaches the repository as `matlab-on-databricks.zip`, which the **Download Latest** button in the [main README](/README.md) links to. GitHub counts downloads of this file. |
 
 ---------------
 

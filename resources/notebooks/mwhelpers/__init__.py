@@ -2,7 +2,8 @@
 
 import re
 
-__version__ = "1.0.0"
+# Keep in sync with the release tag (e.g. 1.3.0 for tag v1.3.0).
+__version__ = "1.3.0"
 
 
 def version() -> str:

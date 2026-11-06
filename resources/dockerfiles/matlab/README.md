@@ -15,8 +15,15 @@ By default, the [Dockerfile](./Dockerfile) in this folder:
 
 ### Get Sources
 
-Access the Dockerfile either by directly downloading this repository from GitHub&reg;,
-or by cloning this repository and then navigating to the appropriate folder.
+[Download the latest release (`matlab-on-databricks.zip`)](https://github.com/mathworks-ref-arch/matlab-on-databricks/releases/latest/download/matlab-on-databricks.zip) from GitHub&reg;,
+then unzip it and navigate to the appropriate folder.
+
+```bash
+unzip matlab-on-databricks.zip
+cd matlab-on-databricks/resources/dockerfiles/matlab
+```
+
+Alternatively, clone this repository and navigate to the appropriate folder.
 
 ```bash
 git clone https://github.com/mathworks-ref-arch/matlab-on-databricks.git

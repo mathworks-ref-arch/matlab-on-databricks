@@ -40,9 +40,7 @@ If you do not have internet access, use this method to upload the repository as 
 
 Using a machine with internet access, download the repository as a `.zip` file:
 
-- Using your browser, go to the repository: [MATLAB on Databricks (GitHub)](https://github.com/mathworks-ref-arch/matlab-on-databricks).
-
-- Click **Code** > **Download ZIP**.
+- [Download the latest release (`matlab-on-databricks.zip`)](https://github.com/mathworks-ref-arch/matlab-on-databricks/releases/latest/download/matlab-on-databricks.zip).
 
 ### Import Repository
 
@@ -52,7 +50,7 @@ Using a machine with internet access, download the repository as a `.zip` file:
 3. Click the three vertical dots, then click **Import**.
 4. Select **Import from** > **File**.
 5. Upload the repository `.zip` file.
-6. Click **Import**. Databricks will automatically unzip the archive into a folder named `matlab-on-databricks-main`.
+6. Click **Import**. Databricks will automatically unzip the archive into a folder named `matlab-on-databricks`.
 
 ---------------
 Copyright 2026 The MathWorks, Inc.

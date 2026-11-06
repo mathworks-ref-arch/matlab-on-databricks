@@ -26,7 +26,14 @@ As an overview, you set up MATLAB using this workflow:
 
 First, use the MATLAB [Dockerfile](/resources/dockerfiles/matlab/Dockerfile) in this repository to build an image containing MATLAB and [MATLAB Proxy (GitHub)](https://github.com/mathworks/matlab-proxy). This workflow supports MATLAB R2024b or later. MATLAB uses the Java 17 installation available in the Databricks base image. To see which Java versions each MATLAB release supports, see [OpenJDK Compatibility with MATLAB (MathWorks)](https://www.mathworks.com/support/requirements/openjdk.html).
 
-1. Clone this repository.
+1. Get this repository. [Download the latest release (`matlab-on-databricks.zip`)](https://github.com/mathworks-ref-arch/matlab-on-databricks/releases/latest/download/matlab-on-databricks.zip), unzip it, and navigate to the extracted folder.
+
+    ```bash
+    unzip matlab-on-databricks.zip
+    cd matlab-on-databricks
+    ```
+
+    Alternatively, clone this repository.
 
     ```bash
     git clone https://github.com/mathworks-ref-arch/matlab-on-databricks

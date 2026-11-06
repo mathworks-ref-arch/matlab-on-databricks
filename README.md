@@ -1,8 +1,10 @@
 # Run MATLAB on Databricks
 
+[![Download Latest](https://img.shields.io/github/v/release/mathworks-ref-arch/matlab-on-databricks?label=Download%20Latest&logo=github&color=orange)](https://github.com/mathworks-ref-arch/matlab-on-databricks/releases/latest/download/matlab-on-databricks.zip) &nbsp; [![GitHub Downloads](https://img.shields.io/github/downloads/mathworks-ref-arch/matlab-on-databricks/total?label=Downloads&logo=github&color=blue)](https://github.com/mathworks-ref-arch/matlab-on-databricks/releases)
+
 This repository shows how to run MATLAB&reg; workflows on Databricks&reg;.
 <div align="center">
-<img src="./resources/assets/MATLAB-in-Databricks.svg" alt="MALTAB on Databricks" width="800">
+<img src="./resources/assets/MATLAB-in-Databricks.svg" alt="MATLAB on Databricks" width="800">
 </div>
 
 First, your organization's administrator needs to:

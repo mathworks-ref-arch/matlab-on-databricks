@@ -1,0 +1,32 @@
+# Copyright 2026 The MathWorks, Inc.
+name: Release Assets
+
+# Attaches the repository as a zip to every published release in the public repo.
+# The file name stays the same across releases so that the README Download button
+# can link to releases/latest/download/matlab-on-databricks.zip.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  repository_zip:
+    name: Attach Repository Zip
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Build repository zip
+        run: git archive --format=zip --prefix=matlab-on-databricks/ -o matlab-on-databricks.zip HEAD
+
+      - name: Upload zip to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" matlab-on-databricks.zip --clobber
